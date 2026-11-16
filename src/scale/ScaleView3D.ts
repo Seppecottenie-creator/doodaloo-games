@@ -140,12 +140,39 @@ function shadowBlobTexture() {
   });
 }
 
+/** Emoji als goudkleurig beeldje: één consistente stijl voor alles zonder foto (o.a. verzonnen personages). */
 function emojiTexture(emoji: string) {
-  return canvasTex(256, 256, (c) => {
-    c.font = '200px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(emoji, 128, 140);
+  return canvasTex(512, 512, (c) => {
+    const shape = document.createElement('canvas');
+    shape.width = shape.height = 512;
+    const s = shape.getContext('2d')!;
+    s.font = '380px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    s.textAlign = 'center';
+    s.textBaseline = 'middle';
+    s.fillText(emoji, 256, 280);
+    // lichtheid van de emoji bewaren als reliëf, kleur vervangen door messing
+    const img = s.getImageData(0, 0, 512, 512);
+    const d = img.data;
+    for (let k = 0; k < d.length; k += 4) {
+      if (!d[k + 3]) continue;
+      const l = (0.3 * d[k] + 0.59 * d[k + 1] + 0.11 * d[k + 2]) / 255;
+      const t = 0.25 + l * 0.85;
+      d[k] = Math.min(255, 70 + 200 * t);
+      d[k + 1] = Math.min(255, 45 + 150 * t);
+      d[k + 2] = Math.min(255, 10 + 60 * t);
+    }
+    s.putImageData(img, 0, 0);
+    // glans van boven
+    s.globalCompositeOperation = 'source-atop';
+    const g = s.createLinearGradient(0, 60, 0, 470);
+    g.addColorStop(0, 'rgba(255,245,200,0.55)');
+    g.addColorStop(0.45, 'rgba(255,220,120,0)');
+    g.addColorStop(1, 'rgba(40,20,0,0.45)');
+    s.fillStyle = g;
+    s.fillRect(0, 0, 512, 512);
+    c.shadowColor = 'rgba(255,190,70,0.35)';
+    c.shadowBlur = 18;
+    c.drawImage(shape, 0, 0);
   });
 }
 

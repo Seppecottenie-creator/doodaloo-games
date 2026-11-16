@@ -78,7 +78,9 @@ export function startApp(root: HTMLElement) {
 
   function practice() {
     const recent = load().practice.recent;
-    const objs = practiceSelection(POOL, recent);
+    // ?test=id1,id2 speelt precies die voorwerpen (handig om nieuwe foto's of renders te bekijken)
+    const forced = new URLSearchParams(location.search).get('test')?.split(',').map((id) => POOL.find((o) => o.id === id)).filter((o): o is GameObject => !!o);
+    const objs = forced?.length ? forced : practiceSelection(POOL, recent);
     const session = new Session('practice', objs, null);
     save((s) => {
       s.seenIntro = true;

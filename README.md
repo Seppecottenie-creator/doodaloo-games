@@ -23,16 +23,26 @@ npm run build      # productiebuild in dist/
 
 ## Technische keuzes
 
-- **Vite + vanilla TypeScript.** Geen framework: de hele app is ±24 KB JS gzip (limiet: 300 KB).
-- **Balans in Canvas 2D**, met een eigen veer-dempersimulatie op vaste stap (120 Hz):
-  - de balk veert naar zijn doelhoek;
-  - de schalen hangen als slinger aan de balk en reageren op de versnelling van het ophangpunt;
-  - de schaalbodem veert mee bij elke landing;
-  - de wijzer heeft een eigen veer en trilt na.
+- **Vite + vanilla TypeScript.** De startpagina laadt ±26 KB JS gzip. De 3D-balans (Three.js, ±131 KB gzip) wordt op de achtergrond geladen terwijl je op home staat. Samen blijft dat ruim onder de limiet van 300 KB.
+- **3D-balans in Three.js** (`src/scale/ScaleView3D.ts`):
+  - messing met echte omgevingsreflecties, een houten sokkel, kettingen uit losse schakels en zachte schaduwen;
+  - de lus rendert alleen zolang er iets beweegt;
+  - zonder WebGL valt het spel terug op de 2D-balans (`ScaleView.ts`).
+- **Physics** (`src/scale/physics.ts`): een veer-dempersimulatie op vaste stap. De balk veert na, de schalen slingeren mee en de wijzer trilt na. Gewichten vallen en stuiteren.
+- **Foto's**: vrij gelicentieerde foto's van Wikimedia Commons, met de achtergrond automatisch verwijderd (rembg). De credits staan in `objects.json` (`credit`) en zijn te zien in het spel en op het scherm *Fotocredits*. Voorwerpen zonder foto, zoals de verzonnen personages, verschijnen als goudkleurig beeldje.
+- **Geluid**: volledig gesynthetiseerd met Web Audio.
 
-  Gewichten en emoji worden één keer als sprite voorgerenderd en daarna enkel met `drawImage` getekend. De lus stopt zodra alles stilstaat, zodat er geen batterij verloren gaat. In een gesimuleerde Pixel 7 haalt hij een stabiele 60 fps.
-- **Geluid** wordt volledig gesynthetiseerd met Web Audio, zonder samples of auteursrechtelijk beschermd materiaal.
-- **Structuur:** `src/game` (logica, seed, score), `src/scale` (balans), `src/ui` (schermen), `src/audio`, `src/i18n/nl.ts` (alle teksten).
+### Foto's toevoegen of vervangen
+
+```bash
+pip install "rembg[cpu]" pillow
+python3 -I scripts/wiki_candidates.py <werkmap> <id> ...      # kandidaten uit Wikipedia-artikels
+CANDS=wcands.json python3 -I scripts/commons_sheets.py <werkmap> blad <id> ...   # contactsheet om te kiezen
+echo '{"<id>": "w0"}' > picks.json
+python3 -I scripts/process_images.py <werkmap> picks.json    # downloaden, uitknippen, credits invullen
+```
+
+Jouw eigen renders zet je als `public/objects/<id>.webp` (of `.png`) en je verwijst ernaar met `image` in `objects.json`. Haal dan ook het `credit`-veld weg. Wil je een set voorwerpen bekijken, open dan het spel met `?test=id1,id2,…` en kies *Vrij spel*.
 
 ## ✅ Checklist voor Seppe
 
@@ -44,7 +54,7 @@ npm run build      # productiebuild in dist/
 
 **Mijlpaal 2**
 - [ ] De lijst voorwerpen nalezen: is de toon goed, en zijn de personages grappig genoeg?
-- [ ] Renders maken volgens `docs/render-guide.md` (volgt in mijlpaal 2).
+- [ ] Renders maken voor de voorwerpen zonder foto en voor de verzonnen personages, volgens `docs/render-guide.md` (volgt in mijlpaal 2).
 
 **Mijlpaal 3**
 - [ ] Een Supabase-project aanmaken (de stap-voor-stap-uitleg volgt in mijlpaal 3).

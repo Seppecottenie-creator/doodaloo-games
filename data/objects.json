@@ -559,7 +559,13 @@
     "emoji": "🐭",
     "source": "https://en.wikipedia.org/wiki/House_mouse",
     "funFact": "Een muis kan zich door een gat van 6 mm wurmen.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/huismuis.webp",
+    "credit": {
+      "author": "DiegoDiegoDiego555",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:HouseMouse.jpg"
+    }
   },
   {
     "id": "wasmachine",
@@ -589,7 +595,13 @@
     "emoji": "🎹",
     "source": "https://en.wikipedia.org/wiki/Grand_piano",
     "funFact": "Een vleugel heeft zo’n 230 snaren met samen 20 ton spanning.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/concertvleugel.webp",
+    "credit": {
+      "author": "KarlKunde",
+      "license": "CC BY-SA 3.0",
+      "url": "https://commons.wikimedia.org/wiki/File:D274.jpg"
+    }
   },
   {
     "id": "smart",
@@ -618,7 +630,13 @@
     ],
     "emoji": "🔔",
     "source": "https://en.wikipedia.org/wiki/Liberty_Bell",
-    "funFact": "De Liberty Bell weegt 2.080 pond en heeft al meer dan 150 jaar niet meer geluid."
+    "funFact": "De Liberty Bell weegt 2.080 pond en heeft al meer dan 150 jaar niet meer geluid.",
+    "image": "objects/liberty-bell.webp",
+    "credit": {
+      "author": "William Zhang",
+      "license": "CC BY 2.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Liberty_Bell_2017a.jpg"
+    }
   },
   {
     "id": "nijlpaard",
@@ -633,7 +651,13 @@
     "emoji": "🦛",
     "source": "https://en.wikipedia.org/wiki/Hippopotamus",
     "funFact": "Een nijlpaard kan niet zwemmen: het loopt over de bodem van de rivier.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/nijlpaard.webp",
+    "credit": {
+      "author": "Muhammad Mahdi Karim",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Portrait_Hippopotamus_in_the_water.jpg"
+    }
   },
   {
     "id": "zeecontainer",
@@ -663,7 +687,13 @@
     "emoji": "🐘",
     "source": "https://en.wikipedia.org/wiki/African_bush_elephant",
     "funFact": "Een olifant eet tot 150 kg planten per dag.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/olifant.webp",
+    "credit": {
+      "author": "Giles Laurent",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:178_Male_African_bush_elephant_in_Etosha_National_Park_Photo_by_Giles_Laurent.jpg"
+    }
   },
   {
     "id": "trex",
@@ -708,7 +738,13 @@
     ],
     "emoji": "🦁",
     "source": "https://nl.wikipedia.org/wiki/Leeuw_van_Waterloo",
-    "funFact": "Je moet 226 treden op om bij de leeuw te komen."
+    "funFact": "Je moet 226 treden op om bij de leeuw te komen.",
+    "image": "objects/leeuw-waterloo.webp",
+    "credit": {
+      "author": "EmDee",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Belgique_-_Butte_du_Lion_-_04.jpg"
+    }
   },
   {
     "id": "vrachtwagen",
@@ -723,7 +759,13 @@
     ],
     "emoji": "🚛",
     "source": "https://mobilit.belgium.be/",
-    "funFact": "Een vrachtwagen met 44 t weegt ongeveer evenveel als 30 gewone auto’s."
+    "funFact": "Een vrachtwagen met 44 t weegt ongeveer evenveel als 30 gewone auto’s.",
+    "image": "objects/vrachtwagen.webp",
+    "credit": {
+      "author": "User Arpingstone on en.wikipedia",
+      "license": "Public domain",
+      "url": "https://commons.wikimedia.org/wiki/File:Artic.lorry.arp.750pix.jpg"
+    }
   },
   {
     "id": "boeing-737",
@@ -738,7 +780,13 @@
     ],
     "emoji": "✈️",
     "source": "https://en.wikipedia.org/wiki/Boeing_737_Next_Generation",
-    "funFact": "Op elk moment zitten er wereldwijd zo’n 1.000 Boeing 737’s in de lucht."
+    "funFact": "Op elk moment zitten er wereldwijd zo’n 1.000 Boeing 737’s in de lucht.",
+    "image": "objects/boeing-737.webp",
+    "credit": {
+      "author": "4300streetcar",
+      "license": "CC BY 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Delta_Boeing_737-800_N371DA_departing_Boston_June_2025.jpg"
+    }
   },
   {
     "id": "blauwe-vinvis",
@@ -782,7 +830,13 @@
     ],
     "emoji": "✈️",
     "source": "https://en.wikipedia.org/wiki/Airbus_A380",
-    "funFact": "Een A380 heeft vleugels van 80 m breed: meer dan de lengte van het vliegtuig zelf."
+    "funFact": "Een A380 heeft vleugels van 80 m breed: meer dan de lengte van het vliegtuig zelf.",
+    "image": "objects/a380.webp",
+    "credit": {
+      "author": "F1jmm",
+      "license": "CC BY-SA 3.0",
+      "url": "https://commons.wikimedia.org/wiki/File:A380_01.jpg"
+    }
   },
   {
     "id": "olympisch-zwembad",
@@ -811,7 +865,13 @@
     ],
     "emoji": "⚛️",
     "source": "https://www.atomium.be/",
-    "funFact": "Het Atomium stelt een ijzerkristal voor, 165 miljard keer vergroot."
+    "funFact": "Het Atomium stelt een ijzerkristal voor, 165 miljard keer vergroot.",
+    "image": "objects/atomium.webp",
+    "credit": {
+      "author": "Trougnouf (Benoit Brummer)",
+      "license": "CC BY 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:The_Atomium_during_civil_twilight_(DSCF1135).jpg"
+    }
   },
   {
     "id": "saturn-v",
@@ -840,7 +900,13 @@
     ],
     "emoji": "🗼",
     "source": "https://www.toureiffel.paris/fr/le-monument/chiffres-cles",
-    "funFact": "Door de warmte kan de Eiffeltoren in de zomer tot 15 cm groeien."
+    "funFact": "Door de warmte kan de Eiffeltoren in de zomer tot 15 cm groeien.",
+    "image": "objects/eiffeltoren.webp",
+    "credit": {
+      "author": "Photo: © Giles Laurent / Illumination: © Pierre Bideau, concepteur Lumière, pour…",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:1000_Eiffel_tower_night_illumination_by_Pierre_Bideau_in_Paris_Photo_by_Giles_Laurent.jpg"
+    }
   },
   {
     "id": "brugtrol-bertrand",
