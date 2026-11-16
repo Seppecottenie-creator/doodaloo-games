@@ -1,0 +1,75 @@
+/** Alle teksten van het spel. Voeg later en.ts toe met dezelfde vorm. */
+export const nl = {
+  appName: 'Weegschaal',
+  tagline: 'Hoe zwaar is het? Leg de gewichten en weeg.',
+  home: {
+    playDaily: (n: number) => `Speel vandaag (#${n})`,
+    dailyDone: (n: number) => `Resultaat van vandaag (#${n})`,
+    practice: 'Vrij spel',
+    how: 'Hoe werkt het?',
+    howText: [
+      'Er ligt een voorwerp op de linkerschaal.',
+      'Tik op gewichten (of sleep ze) naar de rechterschaal. Tik op een gewicht op de schaal om het weg te halen.',
+      'Druk op Weeg! en kijk hoe ver je ernaast zat. 5 rondes, max. 500 punten.',
+    ],
+    stats: (played: number, best: number) => `${played} gespeeld · beste ${best}`,
+    newDailyIn: 'Nieuw spel over',
+    localNote: 'Het dagelijkse spel draait voorlopig lokaal. Ranglijsten komen eraan.',
+  },
+  game: {
+    round: (r: number, n: number) => `Ronde ${r} van ${n}`,
+    real: 'Echt',
+    fictional: 'Fictief',
+    total: 'Op de schaal',
+    weigh: 'Weeg!',
+    clear: 'Leeg',
+    quit: 'Stoppen',
+    quitConfirm: 'Stoppen? Je voortgang in deze ronde gaat verloren.',
+    trayLabel: 'Gewichten',
+    addWeight: (w: string, n: number) => `${w} toevoegen (${n} op de schaal). Delete om er één weg te halen.`,
+    removedWeight: (w: string) => `${w} weggehaald`,
+    locked: 'Balans vergrendeld',
+    emptyHint: 'Tik of sleep gewichten naar de schaal',
+    score: 'Score',
+  },
+  reveal: {
+    yourGuess: 'Jouw gok',
+    actual: 'Echt gewicht',
+    next: 'Volgende',
+    finish: 'Naar resultaat',
+    funFact: 'Wist je dat?',
+    exact: 'Op de gram! 🎯',
+    close: 'Bijna perfect! 👌',
+    tooLight: (f: string) => `Je zat ${f} te licht`,
+    tooHeavy: (f: string) => `Je zat ${f} te zwaar`,
+    slightlyLight: 'Net iets te licht',
+    slightlyHeavy: 'Net iets te zwaar',
+    miles: 'Daar ging de balans… 🙈',
+  },
+  end: {
+    title: 'Eindscore',
+    titlePractice: 'Vrij spel',
+    share: 'Delen',
+    copied: 'Gekopieerd naar het klembord!',
+    again: 'Nog een keer',
+    home: 'Home',
+    next: 'Volgende dagelijkse spel over',
+    shareHeader: (n: number | null, total: number, max: number) =>
+      n === null ? `⚖️ Weegschaal (vrij spel) — ${total}/${max}` : `⚖️ Weegschaal #${n} — ${total}/${max}`,
+    verdicts: [
+      [450, 'Weegmeester! 🏆'],
+      [350, 'Straf gewogen! 💪'],
+      [250, 'Niet slecht!'],
+      [150, 'Er zit nog wat speling op.'],
+      [0, 'De balans had een slechte dag.'],
+    ] as [number, string][],
+  },
+  settings: {
+    sound: 'Geluid',
+    soundOn: 'Geluid aan',
+    soundOff: 'Geluid uit',
+  },
+};
+
+export type Strings = typeof nl;
+export const t = nl;

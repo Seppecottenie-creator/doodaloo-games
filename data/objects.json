@@ -1,0 +1,919 @@
+[
+  {
+    "id": "eurocent",
+    "name": "Muntstuk van 1 cent",
+    "description": "Het kleinste muntje in je portemonnee.",
+    "grams": 2.3,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "geld"
+    ],
+    "emoji": "🪙",
+    "source": "https://www.ecb.europa.eu/euro/coins/common/html/index.nl.html",
+    "funFact": "Een 1-centmunt is van staal met een laagje koper. Hij aanmaken kost meer dan 1 cent."
+  },
+  {
+    "id": "euro-2",
+    "name": "Muntstuk van 2 euro",
+    "description": "De dikste munt van de eurozone.",
+    "grams": 8.5,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "geld"
+    ],
+    "emoji": "🪙",
+    "source": "https://www.ecb.europa.eu/euro/coins/common/html/index.nl.html",
+    "funFact": "Op de rand van de Belgische 2-euromunt staan sterren en tweemaal het cijfer 2."
+  },
+  {
+    "id": "a4-blad",
+    "name": "Blad A4-papier (80 g/m²)",
+    "description": "Gewoon printpapier, één velletje.",
+    "grams": 5,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "kantoor"
+    ],
+    "emoji": "📄",
+    "source": "https://nl.wikipedia.org/wiki/Grammage",
+    "funFact": "Een A4 is precies 1/16 m². Bij 80 g/m² weegt één blad dus 5 g."
+  },
+  {
+    "id": "kippenei",
+    "name": "Kippenei (maat M)",
+    "description": "Vers van de kip, nog in de schaal.",
+    "grams": 58,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "eten"
+    ],
+    "emoji": "🥚",
+    "source": "https://www.eggs.ie/egg-sizes",
+    "funFact": "De eischaal is goed voor ongeveer 10% van het gewicht van een ei.",
+    "estimate": true
+  },
+  {
+    "id": "tennisbal",
+    "name": "Tennisbal",
+    "description": "Geel, pluizig en officieel goedgekeurd.",
+    "grams": 58,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🎾",
+    "source": "https://www.itftennis.com/media/7221/2024-rules-of-tennis-english.pdf",
+    "funFact": "Volgens de ITF-regels moet een tennisbal tussen 56,0 en 59,4 g wegen."
+  },
+  {
+    "id": "golfbal",
+    "name": "Golfbal",
+    "description": "Met 300 à 400 putjes.",
+    "grams": 45.9,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "⛳",
+    "source": "https://en.wikipedia.org/wiki/Golf_ball",
+    "funFact": "Een golfbal mag officieel niet meer dan 45,93 g wegen."
+  },
+  {
+    "id": "pingpongbal",
+    "name": "Pingpongbal",
+    "description": "Zo licht dat hij wegwaait.",
+    "grams": 2.7,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🏓",
+    "source": "https://en.wikipedia.org/wiki/Table_tennis",
+    "funFact": "Sinds 2000 is de officiële bal 40 mm, groter dan vroeger, zodat het spel trager en beter te volgen werd."
+  },
+  {
+    "id": "blikje-frisdrank",
+    "name": "Blikje frisdrank (33 cl, vol)",
+    "description": "Gekoeld, nog niet open.",
+    "grams": 355,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "eten",
+      "drank"
+    ],
+    "emoji": "🥤",
+    "source": "https://en.wikipedia.org/wiki/Beverage_can",
+    "funFact": "Een leeg aluminium blikje weegt maar zo’n 13 g.",
+    "estimate": true
+  },
+  {
+    "id": "aa-batterij",
+    "name": "AA-batterij (alkaline)",
+    "description": "Penlite, het werkpaard van de afstandsbediening.",
+    "grams": 23,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "huis"
+    ],
+    "emoji": "🔋",
+    "source": "https://en.wikipedia.org/wiki/AA_battery",
+    "funFact": "De AA-batterij werd in 1907 ontwikkeld en heette pas vanaf 1947 officieel \"AA\"."
+  },
+  {
+    "id": "fles-water",
+    "name": "Fles water 1,5 L (vol)",
+    "description": "Plat, en de fles is van plastic.",
+    "grams": 1530,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "drank"
+    ],
+    "emoji": "💧",
+    "source": "https://nl.wikipedia.org/wiki/Water",
+    "funFact": "Een liter water weegt ongeveer 1 kg: zo werd de kilogram oorspronkelijk gedefinieerd.",
+    "estimate": true
+  },
+  {
+    "id": "smartphone",
+    "name": "Smartphone (iPhone 15)",
+    "description": "Je telefoon, zonder hoesje.",
+    "grams": 171,
+    "fictional": false,
+    "difficulty": 1,
+    "tags": [
+      "tech"
+    ],
+    "emoji": "📱",
+    "source": "https://www.apple.com/iphone-15/specs/",
+    "funFact": "Een smartphone bevat sporen van goud, zilver en een dertigtal andere metalen."
+  },
+  {
+    "id": "voetbal",
+    "name": "Voetbal (maat 5)",
+    "description": "Wedstrijdbal, opgepompt.",
+    "grams": 430,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "⚽",
+    "source": "https://en.wikipedia.org/wiki/Ball_(association_football)",
+    "funFact": "De FIFA-regels laten een gewicht tussen 410 en 450 g toe."
+  },
+  {
+    "id": "basketbal",
+    "name": "Basketbal (maat 7)",
+    "description": "Voor de heren-competitie.",
+    "grams": 600,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🏀",
+    "source": "https://en.wikipedia.org/wiki/Basketball_(ball)",
+    "funFact": "Een maat 7-bal moet volgens de FIBA 567 tot 650 g wegen.",
+    "estimate": true
+  },
+  {
+    "id": "baksteen",
+    "name": "Baksteen",
+    "description": "Een klassieke volle gevelsteen.",
+    "grams": 2200,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "bouw",
+      "belgie"
+    ],
+    "emoji": "🧱",
+    "source": "https://nl.wikipedia.org/wiki/Baksteen",
+    "funFact": "Een gemiddelde rijwoning bevat zo’n 25.000 bakstenen.",
+    "estimate": true
+  },
+  {
+    "id": "shuttle",
+    "name": "Badmintonshuttle",
+    "description": "Met 16 ganzenveren.",
+    "grams": 5.1,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🏸",
+    "source": "https://en.wikipedia.org/wiki/Shuttlecock",
+    "funFact": "Een smash met een shuttle haalde ooit meer dan 490 km/u: sneller dan een Formule 1-wagen."
+  },
+  {
+    "id": "olympische-medaille",
+    "name": "Gouden medaille (Parijs 2024)",
+    "description": "Met een stukje van de Eiffeltoren erin.",
+    "grams": 529,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🥇",
+    "source": "https://en.wikipedia.org/wiki/2024_Summer_Olympics_medals",
+    "funFact": "Een olympische \"gouden\" medaille is grotendeels zilver met een laagje van 6 g goud."
+  },
+  {
+    "id": "mensenbrein",
+    "name": "Menselijk brein",
+    "description": "Het orgaan dat dit spel speelt.",
+    "grams": 1350,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "lichaam"
+    ],
+    "emoji": "🧠",
+    "source": "https://en.wikipedia.org/wiki/Human_brain",
+    "funFact": "Het brein is 2% van je lichaamsgewicht maar verbruikt zo’n 20% van je energie.",
+    "estimate": true
+  },
+  {
+    "id": "mensenhart",
+    "name": "Menselijk hart",
+    "description": "Klopt zo’n 100.000 keer per dag.",
+    "grams": 300,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "lichaam"
+    ],
+    "emoji": "🫀",
+    "source": "https://en.wikipedia.org/wiki/Heart",
+    "funFact": "Je hart pompt elke dag ongeveer 7.000 liter bloed rond.",
+    "estimate": true
+  },
+  {
+    "id": "speer",
+    "name": "Speer (mannen)",
+    "description": "Atletiek, niet de middeleeuwse soort.",
+    "grams": 800,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🎯",
+    "source": "https://en.wikipedia.org/wiki/Javelin_throw",
+    "funFact": "Het wereldrecord speerwerpen staat sinds 1996 op 98,48 m (Jan Železný)."
+  },
+  {
+    "id": "discus",
+    "name": "Discus (mannen)",
+    "description": "Draaien, draaien, loslaten.",
+    "grams": 2000,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🥏",
+    "source": "https://en.wikipedia.org/wiki/Discus_throw",
+    "funFact": "Discuswerpen stond al op de Olympische Spelen van de oudheid."
+  },
+  {
+    "id": "bijkolibrie",
+    "name": "Bijkolibrie",
+    "description": "De kleinste vogel ter wereld.",
+    "grams": 2,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "dieren"
+    ],
+    "emoji": "🐦",
+    "source": "https://en.wikipedia.org/wiki/Bee_hummingbird",
+    "funFact": "Een bijkolibrie slaat 80 keer per seconde met zijn vleugels.",
+    "estimate": true
+  },
+  {
+    "id": "honkbal",
+    "name": "Honkbal",
+    "description": "Met precies 108 dubbele steken.",
+    "grams": 145,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "⚾",
+    "source": "https://en.wikipedia.org/wiki/Baseball_(ball)",
+    "funFact": "Een honkbal moet tussen 142 en 149 g wegen."
+  },
+  {
+    "id": "volleybal",
+    "name": "Volleybal",
+    "description": "Officiële wedstrijdbal.",
+    "grams": 270,
+    "fictional": false,
+    "difficulty": 2,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🏐",
+    "source": "https://en.wikipedia.org/wiki/Volleyball_(ball)",
+    "funFact": "Volleybal werd in 1895 uitgevonden als rustiger alternatief voor basketbal."
+  },
+  {
+    "id": "kogel",
+    "name": "Kogel (kogelstoten, mannen)",
+    "description": "Een massieve bal van ijzer of messing.",
+    "grams": 7260,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "⚫",
+    "source": "https://en.wikipedia.org/wiki/Shot_put",
+    "funFact": "7,26 kg is precies 16 Engelse pond."
+  },
+  {
+    "id": "halterstang",
+    "name": "Olympische halterstang (mannen)",
+    "description": "Zonder schijven.",
+    "grams": 20000,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🏋️",
+    "source": "https://en.wikipedia.org/wiki/Barbell",
+    "funFact": "Een olympische stang is 2,2 m lang en kan meer dan 600 kg dragen."
+  },
+  {
+    "id": "zak-cement",
+    "name": "Zak cement",
+    "description": "Standaardzak uit de bouwmarkt.",
+    "grams": 25000,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "bouw"
+    ],
+    "emoji": "🛍️",
+    "source": "https://nl.wikipedia.org/wiki/Cement",
+    "funFact": "25 kg is in Europa de maximale \"handlast\" waarvoor zakken worden ontworpen."
+  },
+  {
+    "id": "curlingsteen",
+    "name": "Curlingsteen",
+    "description": "Graniet uit Schotland of Wales.",
+    "grams": 19100,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🥌",
+    "source": "https://en.wikipedia.org/wiki/Curling",
+    "funFact": "Bijna alle olympische curlingstenen komen van het Schotse eilandje Ailsa Craig.",
+    "estimate": true
+  },
+  {
+    "id": "kegel",
+    "name": "Bowlingkegel",
+    "description": "Eén van de tien.",
+    "grams": 1600,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🎳",
+    "source": "https://en.wikipedia.org/wiki/Bowling_pin",
+    "funFact": "Een bowlingkegel is gemaakt van esdoornhout met een plastic laag.",
+    "estimate": true
+  },
+  {
+    "id": "struisvogelei",
+    "name": "Struisvogelei",
+    "description": "Het grootste ei van alle levende vogels.",
+    "grams": 1400,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "dieren",
+      "eten"
+    ],
+    "emoji": "🥚",
+    "source": "https://en.wikipedia.org/wiki/Common_ostrich",
+    "funFact": "Om een struisvogelei hard te koken heb je zo’n 90 minuten nodig.",
+    "estimate": true
+  },
+  {
+    "id": "hart-vinvis",
+    "name": "Hart van een blauwe vinvis",
+    "description": "Gemeten in 2014 in Canada.",
+    "grams": 180000,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "dieren",
+      "lichaam"
+    ],
+    "emoji": "🫀",
+    "source": "https://en.wikipedia.org/wiki/Blue_whale",
+    "funFact": "Het hart van een blauwe vinvis is ongeveer zo groot als een golfkarretje.",
+    "estimate": true
+  },
+  {
+    "id": "pasgeborene",
+    "name": "Pasgeboren baby",
+    "description": "Gemiddeld, in België.",
+    "grams": 3350,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "lichaam"
+    ],
+    "emoji": "👶",
+    "source": "https://www.cebam.be/",
+    "funFact": "Een baby verliest de eerste dagen tot 10% van zijn geboortegewicht.",
+    "estimate": true
+  },
+  {
+    "id": "huismuis",
+    "name": "Huismuis",
+    "description": "Volwassen, en heel nieuwsgierig.",
+    "grams": 20,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "dieren"
+    ],
+    "emoji": "🐭",
+    "source": "https://en.wikipedia.org/wiki/House_mouse",
+    "funFact": "Een muis kan zich door een gat van 6 mm wurmen.",
+    "estimate": true
+  },
+  {
+    "id": "wasmachine",
+    "name": "Wasmachine",
+    "description": "Een gewone voorlader.",
+    "grams": 70000,
+    "fictional": false,
+    "difficulty": 3,
+    "tags": [
+      "huis"
+    ],
+    "emoji": "🧺",
+    "source": "https://en.wikipedia.org/wiki/Washing_machine",
+    "funFact": "Er zit vaak een betonblok in een wasmachine om ze stil te houden tijdens het centrifugeren.",
+    "estimate": true
+  },
+  {
+    "id": "concertvleugel",
+    "name": "Concertvleugel",
+    "description": "2,74 m lang, glanzend zwart.",
+    "grams": 480000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "muziek"
+    ],
+    "emoji": "🎹",
+    "source": "https://en.wikipedia.org/wiki/Grand_piano",
+    "funFact": "Een vleugel heeft zo’n 230 snaren met samen 20 ton spanning.",
+    "estimate": true
+  },
+  {
+    "id": "smart",
+    "name": "Smart ForTwo (1e generatie)",
+    "description": "Het mini-autootje dat dwars kan parkeren.",
+    "grams": 730000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "voertuigen"
+    ],
+    "emoji": "🚗",
+    "source": "https://en.wikipedia.org/wiki/Smart_Fortwo",
+    "funFact": "Een Smart ForTwo is 2,5 m lang: korter dan veel auto’s breed zijn met open deuren.",
+    "estimate": true
+  },
+  {
+    "id": "liberty-bell",
+    "name": "Liberty Bell",
+    "description": "De barst is beroemder dan de klok.",
+    "grams": 943000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "geschiedenis"
+    ],
+    "emoji": "🔔",
+    "source": "https://en.wikipedia.org/wiki/Liberty_Bell",
+    "funFact": "De Liberty Bell weegt 2.080 pond en heeft al meer dan 150 jaar niet meer geluid."
+  },
+  {
+    "id": "nijlpaard",
+    "name": "Nijlpaard",
+    "description": "Volwassen, al gapend.",
+    "grams": 1500000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "dieren"
+    ],
+    "emoji": "🦛",
+    "source": "https://en.wikipedia.org/wiki/Hippopotamus",
+    "funFact": "Een nijlpaard kan niet zwemmen: het loopt over de bodem van de rivier.",
+    "estimate": true
+  },
+  {
+    "id": "zeecontainer",
+    "name": "Lege zeecontainer (20 voet)",
+    "description": "Staal, golfplaat, deuren aan één kant.",
+    "grams": 2300000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "transport"
+    ],
+    "emoji": "📦",
+    "source": "https://en.wikipedia.org/wiki/Intermodal_container",
+    "funFact": "Een 20-voetcontainer mag tot ruim 28 ton lading bevatten.",
+    "estimate": true
+  },
+  {
+    "id": "olifant",
+    "name": "Afrikaanse olifant (stier)",
+    "description": "De zwaarste landbewoner van vandaag.",
+    "grams": 6000000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "dieren"
+    ],
+    "emoji": "🐘",
+    "source": "https://en.wikipedia.org/wiki/African_bush_elephant",
+    "funFact": "Een olifant eet tot 150 kg planten per dag.",
+    "estimate": true
+  },
+  {
+    "id": "trex",
+    "name": "Tyrannosaurus rex",
+    "description": "Volwassen exemplaar, 66 miljoen jaar geleden.",
+    "grams": 8000000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "dieren",
+      "prehistorie"
+    ],
+    "emoji": "🦖",
+    "source": "https://en.wikipedia.org/wiki/Tyrannosaurus",
+    "funFact": "Een T. rex had tanden van wel 30 cm, wortel inbegrepen.",
+    "estimate": true
+  },
+  {
+    "id": "big-ben",
+    "name": "Big Ben (de klok zelf)",
+    "description": "De Great Bell in Londen.",
+    "grams": 13700000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "geschiedenis"
+    ],
+    "emoji": "🔔",
+    "source": "https://www.parliament.uk/bigben",
+    "funFact": "Big Ben is eigenlijk de naam van de klok, niet van de toren."
+  },
+  {
+    "id": "leeuw-waterloo",
+    "name": "Leeuw van Waterloo",
+    "description": "Gietijzer op een kunstmatige heuvel.",
+    "grams": 28000000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "belgie",
+      "geschiedenis"
+    ],
+    "emoji": "🦁",
+    "source": "https://nl.wikipedia.org/wiki/Leeuw_van_Waterloo",
+    "funFact": "Je moet 226 treden op om bij de leeuw te komen."
+  },
+  {
+    "id": "vrachtwagen",
+    "name": "Volgeladen vrachtwagen",
+    "description": "Het wettelijke maximum in België (5 assen).",
+    "grams": 44000000,
+    "fictional": false,
+    "difficulty": 4,
+    "tags": [
+      "voertuigen",
+      "belgie"
+    ],
+    "emoji": "🚛",
+    "source": "https://mobilit.belgium.be/",
+    "funFact": "Een vrachtwagen met 44 t weegt ongeveer evenveel als 30 gewone auto’s."
+  },
+  {
+    "id": "boeing-737",
+    "name": "Boeing 737-800 (max. startgewicht)",
+    "description": "Volgetankt, vol passagiers.",
+    "grams": 79000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "voertuigen",
+      "lucht"
+    ],
+    "emoji": "✈️",
+    "source": "https://en.wikipedia.org/wiki/Boeing_737_Next_Generation",
+    "funFact": "Op elk moment zitten er wereldwijd zo’n 1.000 Boeing 737’s in de lucht."
+  },
+  {
+    "id": "blauwe-vinvis",
+    "name": "Blauwe vinvis",
+    "description": "Het zwaarste dier dat ooit geleefd heeft.",
+    "grams": 150000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "dieren"
+    ],
+    "emoji": "🐋",
+    "source": "https://en.wikipedia.org/wiki/Blue_whale",
+    "funFact": "Een blauwe vinvis is zwaarder dan om het even welke dinosaurus.",
+    "estimate": true
+  },
+  {
+    "id": "iss",
+    "name": "Internationaal ruimtestation (ISS)",
+    "description": "Zweeft 400 km boven je hoofd.",
+    "grams": 420000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "ruimte"
+    ],
+    "emoji": "🛰️",
+    "source": "https://www.nasa.gov/reference/international-space-station/",
+    "funFact": "Het ISS draait elke 90 minuten een rondje om de aarde."
+  },
+  {
+    "id": "a380",
+    "name": "Airbus A380 (max. startgewicht)",
+    "description": "Het grootste passagiersvliegtuig.",
+    "grams": 575000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "voertuigen",
+      "lucht"
+    ],
+    "emoji": "✈️",
+    "source": "https://en.wikipedia.org/wiki/Airbus_A380",
+    "funFact": "Een A380 heeft vleugels van 80 m breed: meer dan de lengte van het vliegtuig zelf."
+  },
+  {
+    "id": "olympisch-zwembad",
+    "name": "Water in een olympisch zwembad",
+    "description": "50 × 25 × 2 m.",
+    "grams": 2500000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "sport"
+    ],
+    "emoji": "🏊",
+    "source": "https://en.wikipedia.org/wiki/Olympic-size_swimming_pool",
+    "funFact": "2.500 m³ water: genoeg voor ongeveer 30.000 badkuipen."
+  },
+  {
+    "id": "atomium",
+    "name": "Atomium",
+    "description": "Het ijzerkristal in Brussel.",
+    "grams": 2400000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "belgie",
+      "gebouwen"
+    ],
+    "emoji": "⚛️",
+    "source": "https://www.atomium.be/",
+    "funFact": "Het Atomium stelt een ijzerkristal voor, 165 miljard keer vergroot."
+  },
+  {
+    "id": "saturn-v",
+    "name": "Saturn V (bij de lancering)",
+    "description": "De maanraket, volgetankt.",
+    "grams": 2950000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "ruimte"
+    ],
+    "emoji": "🚀",
+    "source": "https://en.wikipedia.org/wiki/Saturn_V",
+    "funFact": "Meer dan 90% van het gewicht van een Saturn V was brandstof.",
+    "estimate": true
+  },
+  {
+    "id": "eiffeltoren",
+    "name": "Eiffeltoren",
+    "description": "De hele toren, inclusief alles.",
+    "grams": 10100000000,
+    "fictional": false,
+    "difficulty": 5,
+    "tags": [
+      "gebouwen"
+    ],
+    "emoji": "🗼",
+    "source": "https://www.toureiffel.paris/fr/le-monument/chiffres-cles",
+    "funFact": "Door de warmte kan de Eiffeltoren in de zomer tot 15 cm groeien."
+  },
+  {
+    "id": "brugtrol-bertrand",
+    "name": "Brugtrol Bertrand",
+    "description": "Woont onder een brug in Kortrijk en vraagt tol in pralines.",
+    "grams": 340000,
+    "fictional": true,
+    "difficulty": 3,
+    "tags": [
+      "belgie",
+      "trollen"
+    ],
+    "emoji": "🧌",
+    "funFact": "Bertrand eet elke zondag een volle emmer mosselen. Mét de schelpen."
+  },
+  {
+    "id": "wolkenschaap-wendy",
+    "name": "Wolkenschaap Wendy",
+    "description": "Een schaap van pure wolkenwol. Graast boven de Westhoek.",
+    "grams": 12,
+    "fictional": true,
+    "difficulty": 2,
+    "tags": [
+      "dieren",
+      "lucht"
+    ],
+    "emoji": "🐑",
+    "funFact": "Wendy zweeft weg als ze niezt. Haar herder bindt haar vast met een vlieger-touwtje."
+  },
+  {
+    "id": "frietkotdraak-fernand",
+    "name": "Frietkotdraak Fernand",
+    "description": "Bakt de frieten met zijn eigen adem. Tweemaal, uiteraard.",
+    "grams": 2300000,
+    "fictional": true,
+    "difficulty": 4,
+    "tags": [
+      "belgie",
+      "draken",
+      "eten"
+    ],
+    "emoji": "🐉",
+    "funFact": "Fernand weigert mayonaise op zijn frieten. Alleen stoofvleessaus, anders spuwt hij vuur."
+  },
+  {
+    "id": "kabouter-kamiel",
+    "name": "Kabouter Kamiel",
+    "description": "Ardense kabouter met een muts die hij nooit afzet.",
+    "grams": 850,
+    "fictional": true,
+    "difficulty": 2,
+    "tags": [
+      "belgie",
+      "kabouters"
+    ],
+    "emoji": "🧙",
+    "funFact": "Kamiels muts weegt de helft van zijn totale gewicht."
+  },
+  {
+    "id": "mosselmonster-mia",
+    "name": "Mosselmonster Mia",
+    "description": "Woont in de Noordzee, voor de kust van Oostende.",
+    "grams": 640000,
+    "fictional": true,
+    "difficulty": 3,
+    "tags": [
+      "belgie",
+      "zee"
+    ],
+    "emoji": "🦑",
+    "funFact": "Mia verzamelt verloren zonnebrillen. Ze heeft er al 3.412."
+  },
+  {
+    "id": "fluisterspook-firmin",
+    "name": "Fluisterspook Firmin",
+    "description": "Spookt al 800 jaar in het Gravensteen in Gent.",
+    "grams": 3,
+    "fictional": true,
+    "difficulty": 3,
+    "tags": [
+      "belgie",
+      "spoken"
+    ],
+    "emoji": "👻",
+    "funFact": "Firmin weegt bijna niets, maar zijn gerammel met kettingen hoor je drie straten verder."
+  },
+  {
+    "id": "spruitenreus-sander",
+    "name": "Spruitenreus Sander",
+    "description": "Een reus uit het Brusselse die enkel spruitjes eet.",
+    "grams": 18000000,
+    "fictional": true,
+    "difficulty": 5,
+    "tags": [
+      "belgie",
+      "reuzen",
+      "eten"
+    ],
+    "emoji": "🥬",
+    "funFact": "Sander is 42 m groot en draagt maat 312 in schoenen."
+  },
+  {
+    "id": "pralinekrokodil",
+    "name": "Pralinekrokodil Paulien",
+    "description": "Een krokodil van pure chocolade. Vooral niet in de zon leggen.",
+    "grams": 75000,
+    "fictional": true,
+    "difficulty": 3,
+    "tags": [
+      "eten",
+      "dieren"
+    ],
+    "emoji": "🐊",
+    "funFact": "Paulien smelt bij 32 °C. Op warme dagen ligt ze in de koelkast van de bakker."
+  },
+  {
+    "id": "kermiskoe-clementine",
+    "name": "Kermiskoe Clementine",
+    "description": "Rijdt elke zomer op de botsauto’s van de Gentse Feesten.",
+    "grams": 9200000,
+    "fictional": true,
+    "difficulty": 4,
+    "tags": [
+      "belgie",
+      "dieren"
+    ],
+    "emoji": "🐄",
+    "funFact": "Clementine heeft nog nooit een botsing verloren."
+  },
+  {
+    "id": "bierbuikbeer-bruno",
+    "name": "Bierbuikbeer Bruno",
+    "description": "Een beer die de abdijen afloopt op zoek naar de perfecte tripel.",
+    "grams": 1250000,
+    "fictional": true,
+    "difficulty": 4,
+    "tags": [
+      "belgie",
+      "dieren",
+      "drank"
+    ],
+    "emoji": "🐻",
+    "funFact": "Bruno kan aan het schuim zien uit welke abdij een bier komt."
+  },
+  {
+    "id": "regenworm-rik",
+    "name": "Regenworm Rik",
+    "description": "Het langste diertje uit de moestuin van tante Godelieve.",
+    "grams": 4,
+    "fictional": true,
+    "difficulty": 1,
+    "tags": [
+      "dieren"
+    ],
+    "emoji": "🪱",
+    "funFact": "Rik is 2 m lang en heeft schrik van merels."
+  },
+  {
+    "id": "kasseiknorf",
+    "name": "Kasseiknorf",
+    "description": "Woont tussen de kasseien van de Koppenberg en lust geen fietsbanden.",
+    "grams": 95000,
+    "fictional": true,
+    "difficulty": 3,
+    "tags": [
+      "belgie",
+      "sport"
+    ],
+    "emoji": "🪨",
+    "funFact": "De Kasseiknorf doet al 40 jaar mee aan de Ronde van Vlaanderen. Hij is nog nooit gefinisht."
+  }
+]
