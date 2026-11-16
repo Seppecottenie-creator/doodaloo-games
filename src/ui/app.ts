@@ -1,0 +1,110 @@
+import objects from '../../data/objects.json';
+import { setSoundEnabled } from '../audio/sfx';
+import { setHapticsEnabled } from '../game/haptics';
+import { maxTotal } from '../game/score';
+import { dailySelection, dayString, practiceSelection, puzzleNumber } from '../game/seed';
+import { Session } from '../game/session';
+import { load, save } from '../game/storage';
+import type { GameObject } from '../game/types';
+import { endScreen } from './endScreen';
+import { gameScreen } from './gameScreen';
+import { homeScreen } from './homeScreen';
+
+// Mijlpaal 1: de pool zit in de bundle. Vanaf mijlpaal 3 komt het dagelijkse spel van de server.
+const POOL = objects as GameObject[];
+
+export function startApp(root: HTMLElement) {
+  const st = load();
+  setSoundEnabled(st.settings.sound);
+  setHapticsEnabled(st.settings.haptics);
+
+  let cleanup: () => void = () => {};
+  const show = (f: () => () => void) => {
+    cleanup();
+    window.scrollTo(0, 0);
+    cleanup = f();
+  };
+
+  const home = () =>
+    show(() =>
+      homeScreen(root, {
+        onDaily: daily,
+        onDailyResult: dailyResult,
+        onPractice: practice,
+      }),
+    );
+
+  function daily() {
+    const day = dayString();
+    const objs = dailySelection(POOL, day);
+    const prev = load().daily[day]?.rounds ?? [];
+    const session = new Session('daily', objs, day, prev);
+    save((s) => {
+      s.seenIntro = true;
+      s.daily[day] ??= { day, rounds: [], done: false };
+    });
+    if (session.phase === 'done') return dailyResult();
+    show(() =>
+      gameScreen(root, {
+        session,
+        onRoundDone: (s) =>
+          save((st) => {
+            st.daily[day] = { day, rounds: s.results.slice(), done: s.results.length >= s.objects.length };
+          }),
+        onFinish: () => dailyResult(),
+        onQuit: home,
+      }),
+    );
+  }
+
+  function dailyResult() {
+    const day = dayString();
+    const rec = load().daily[day];
+    if (!rec) return home();
+    show(() =>
+      endScreen(root, {
+        mode: 'daily',
+        number: puzzleNumber(day),
+        results: rec.rounds,
+        objects: dailySelection(POOL, day),
+        onAgain: practice,
+        onHome: home,
+      }),
+    );
+  }
+
+  function practice() {
+    const recent = load().practice.recent;
+    const objs = practiceSelection(POOL, recent);
+    const session = new Session('practice', objs, null);
+    save((s) => {
+      s.seenIntro = true;
+      s.practice.recent = [...objs.map((o) => o.id), ...s.practice.recent].slice(0, Math.floor(POOL.length * 0.6));
+    });
+    show(() =>
+      gameScreen(root, {
+        session,
+        onRoundDone: () => {},
+        onFinish: (s) => {
+          save((st) => {
+            st.practice.played++;
+            st.practice.best = Math.min(maxTotal(), Math.max(st.practice.best, s.total));
+          });
+          show(() =>
+            endScreen(root, {
+              mode: 'practice',
+              number: null,
+              results: s.results,
+              objects: s.objects,
+              onAgain: practice,
+              onHome: home,
+            }),
+          );
+        },
+        onQuit: home,
+      }),
+    );
+  }
+
+  home();
+}
