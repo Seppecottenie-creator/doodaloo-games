@@ -8,6 +8,7 @@ export interface HomeOpts {
   onDaily: () => void;
   onDailyResult: () => void;
   onPractice: () => void;
+  onCredits: () => void;
 }
 
 export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
@@ -38,17 +39,25 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
     h('summary', null, t.home.how),
     h('ol', null, ...t.home.howText.map((x) => h('li', null, x))),
   );
+  const credits = h('button', { class: 'link small', type: 'button' }, t.home.credits);
+  credits.addEventListener('click', opts.onCredits);
 
+  const mark = logo(52);
+  mark.classList.add('brand-mark');
   const screen = h(
     'main',
     { class: 'screen home' },
-    h('div', { class: 'home-top' }, h('span'), soundButton()),
-    h('div', { class: 'brand' }, logo(84), h('h1', null, t.appName), h('p', { class: 'tagline' }, t.tagline)),
+    h('div', { class: 'home-top' }, h('span', { class: 'muted small' }, `#${n}`), soundButton()),
+    h('div', { class: 'brand' }, mark, h('h1', null, t.appName), h('p', { class: 'tagline' }, t.tagline)),
     h('div', { class: 'home-actions' }, daily, practice),
-    done ? h('p', { class: 'muted center' }, `${t.home.newDailyIn} `, countdown) : null,
-    st.practice.played ? h('p', { class: 'muted center' }, `${t.home.practice}: ${t.home.stats(st.practice.played, st.practice.best)}`) : null,
+    h(
+      'div',
+      { class: 'home-meta' },
+      h('span', null, `${t.home.newDailyIn} `, countdown),
+      st.practice.played ? h('span', null, t.home.stats(st.practice.played, st.practice.best)) : null,
+    ),
     how,
-    h('p', { class: 'muted small center' }, t.home.localNote),
+    h('p', { class: 'muted small center' }, t.home.localNote, ' ', credits),
   );
   root.replaceChildren(screen);
   daily.focus({ preventScroll: true });

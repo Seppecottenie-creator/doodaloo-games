@@ -16,6 +16,15 @@ export interface EndOpts {
   onHome: () => void;
 }
 
+const band = (s: number) => (s >= 90 ? 'g' : s >= 60 ? 'y' : s >= 30 ? 'o' : 'r');
+
+export function thumb(obj: GameObject | undefined): HTMLElement {
+  const el = h('span', { class: 'end-thumb', 'aria-hidden': 'true' });
+  if (obj?.image) el.append(h('img', { src: `${import.meta.env.BASE_URL}${obj.image}`, alt: '', loading: 'lazy' }));
+  else el.textContent = obj?.emoji ?? '❔';
+  return el;
+}
+
 export function endScreen(root: HTMLElement, o: EndOpts): () => void {
   const total = o.results.reduce((s, r) => s + r.score, 0);
   const max = maxTotal();
@@ -28,18 +37,13 @@ export function endScreen(root: HTMLElement, o: EndOpts): () => void {
     return h(
       'li',
       { class: 'end-row', style: `--i:${i}` },
-      h('span', { class: 'end-emoji', 'aria-hidden': 'true' }, obj?.emoji ?? '❔'),
-      h(
-        'div',
-        { class: 'end-mid' },
-        h('b', null, obj?.name ?? r.objectId),
-        h('small', null, `${formatGrams(r.guess)} → ${formatObjectWeight(r.actual, obj?.estimate)}`),
-      ),
-      h('span', { class: 'end-score' }, h('span', { 'aria-hidden': 'true' }, scoreSquare(r.score)), ` ${r.score}`),
+      thumb(obj),
+      h('div', { class: 'end-mid' }, h('b', null, obj?.name ?? r.objectId), h('small', null, `${formatGrams(r.guess)} → ${formatObjectWeight(r.actual, obj?.estimate)}`)),
+      h('span', { class: `end-score ${band(r.score)}` }, String(r.score)),
     );
   });
 
-  const share = h('button', { class: 'btn primary big', type: 'button' }, `${t.end.share} 📤`);
+  const share = h('button', { class: 'btn primary big', type: 'button' }, t.end.share);
   share.addEventListener('click', async () => {
     const res = await shareResult(shareText(o.number, o.results, o.objects));
     if (res === 'copied') toast(t.end.copied);
@@ -56,14 +60,14 @@ export function endScreen(root: HTMLElement, o: EndOpts): () => void {
     const tick = () => (span.textContent = formatCountdown(msUntilNextDay()));
     tick();
     iv = window.setInterval(tick, 1000);
-    cd = h('p', { class: 'muted center' }, `${t.end.next} `, span);
+    cd = h('p', { class: 'muted small center' }, `${t.end.next} `, span);
   }
 
   const screen = h(
     'main',
     { class: 'screen end' },
-    h('div', { class: 'home-top' }, h('span', { class: 'end-kicker' }, o.number ? `#${o.number}` : t.end.titlePractice), soundButton()),
-    h('h1', { class: 'end-title' }, t.end.title),
+    h('div', { class: 'home-top' }, h('span', { class: 'end-kicker' }, o.number ? `Weegschaal #${o.number}` : t.end.titlePractice), soundButton()),
+    h('p', { class: 'end-title' }, t.end.title),
     h('div', { class: 'end-score-wrap' }, big, h('span', { class: 'of' }, `/${max}`)),
     h('p', { class: 'verdict' }, verdict),
     h('div', { class: 'squares', 'aria-hidden': 'true' }, o.results.map((r) => scoreSquare(r.score)).join('')),
@@ -72,7 +76,7 @@ export function endScreen(root: HTMLElement, o: EndOpts): () => void {
     cd,
   );
   root.replaceChildren(screen);
-  tween(0, total, 1100, (v) => (big.textContent = String(Math.round(v))));
+  tween(0, total, 1200, (v) => (big.textContent = String(Math.round(v))));
   announce(`${t.end.title}: ${total} van ${max}. ${verdict}`);
   share.focus({ preventScroll: true });
   return () => clearInterval(iv);

@@ -11,7 +11,13 @@
     ],
     "emoji": "🪙",
     "source": "https://www.ecb.europa.eu/euro/coins/common/html/index.nl.html",
-    "funFact": "Een 1-centmunt is van staal met een laagje koper. Hij aanmaken kost meer dan 1 cent."
+    "funFact": "Een 1-centmunt is van staal met een laagje koper. Hij aanmaken kost meer dan 1 cent.",
+    "image": "objects/eurocent.webp",
+    "credit": {
+      "author": "Mark Morgan from Trinidad",
+      "license": "CC BY 2.0",
+      "url": "https://commons.wikimedia.org/wiki/File:1999_Euro_1_cent_Belgium_(5218848094).jpg"
+    }
   },
   {
     "id": "euro-2",
@@ -25,7 +31,13 @@
     ],
     "emoji": "🪙",
     "source": "https://www.ecb.europa.eu/euro/coins/common/html/index.nl.html",
-    "funFact": "Op de rand van de Belgische 2-euromunt staan sterren en tweemaal het cijfer 2."
+    "funFact": "Op de rand van de Belgische 2-euromunt staan sterren en tweemaal het cijfer 2.",
+    "image": "objects/euro-2.webp",
+    "credit": {
+      "author": "Unknown authorUnknown author",
+      "license": "CC BY 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:2_Euro,_France.jpg"
+    }
   },
   {
     "id": "a4-blad",
@@ -54,7 +66,13 @@
     "emoji": "🥚",
     "source": "https://www.eggs.ie/egg-sizes",
     "funFact": "De eischaal is goed voor ongeveer 10% van het gewicht van een ei.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/kippenei.webp",
+    "credit": {
+      "author": "User: MrX",
+      "license": "CC BY-SA 3.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Chicken_egg.png"
+    }
   },
   {
     "id": "tennisbal",
@@ -68,7 +86,13 @@
     ],
     "emoji": "🎾",
     "source": "https://www.itftennis.com/media/7221/2024-rules-of-tennis-english.pdf",
-    "funFact": "Volgens de ITF-regels moet een tennisbal tussen 56,0 en 59,4 g wegen."
+    "funFact": "Volgens de ITF-regels moet een tennisbal tussen 56,0 en 59,4 g wegen.",
+    "image": "objects/tennisbal.webp",
+    "credit": {
+      "author": "Miscellaneous contributor",
+      "license": "CC0",
+      "url": "https://commons.wikimedia.org/wiki/File:Closeup_of_a_tennis_ball_(2).jpg"
+    }
   },
   {
     "id": "golfbal",
@@ -82,7 +106,13 @@
     ],
     "emoji": "⛳",
     "source": "https://en.wikipedia.org/wiki/Golf_ball",
-    "funFact": "Een golfbal mag officieel niet meer dan 45,93 g wegen."
+    "funFact": "Een golfbal mag officieel niet meer dan 45,93 g wegen.",
+    "image": "objects/golfbal.webp",
+    "credit": {
+      "author": "Lotus Head from Johannesburg, Gauteng, South Africa",
+      "license": "CC BY-SA 3.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Golfball.jpg"
+    }
   },
   {
     "id": "pingpongbal",
@@ -141,7 +171,13 @@
     "emoji": "💧",
     "source": "https://nl.wikipedia.org/wiki/Water",
     "funFact": "Een liter water weegt ongeveer 1 kg: zo werd de kilogram oorspronkelijk gedefinieerd.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/fles-water.webp",
+    "credit": {
+      "author": "Alabama Extension",
+      "license": "CC0",
+      "url": "https://commons.wikimedia.org/wiki/File:Water_Bottle_(51308317077).jpg"
+    }
   },
   {
     "id": "smartphone",
@@ -155,7 +191,13 @@
     ],
     "emoji": "📱",
     "source": "https://www.apple.com/iphone-15/specs/",
-    "funFact": "Een smartphone bevat sporen van goud, zilver en een dertigtal andere metalen."
+    "funFact": "Een smartphone bevat sporen van goud, zilver en een dertigtal andere metalen.",
+    "image": "objects/smartphone.webp",
+    "credit": {
+      "author": "ThePhotoGraphIc",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Back_of_iPhone_15.jpg"
+    }
   },
   {
     "id": "voetbal",
@@ -169,7 +211,13 @@
     ],
     "emoji": "⚽",
     "source": "https://en.wikipedia.org/wiki/Ball_(association_football)",
-    "funFact": "De FIFA-regels laten een gewicht tussen 410 en 450 g toe."
+    "funFact": "De FIFA-regels laten een gewicht tussen 410 en 450 g toe.",
+    "image": "objects/voetbal.webp",
+    "credit": {
+      "author": "2010 World Cup - Shine 2010 from Johannesburg, South Africa",
+      "license": "CC BY 2.0",
+      "url": "https://commons.wikimedia.org/wiki/File:1970_-_Telstar_(Mexico)_(4171467668).jpg"
+    }
   },
   {
     "id": "basketbal",
@@ -184,7 +232,13 @@
     "emoji": "🏀",
     "source": "https://en.wikipedia.org/wiki/Basketball_(ball)",
     "funFact": "Een maat 7-bal moet volgens de FIBA 567 tot 650 g wegen.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/basketbal.webp",
+    "credit": {
+      "author": "https://en.wikipedia.org/wiki/User:Verpacker_Ing.",
+      "license": "Public domain",
+      "url": "https://commons.wikimedia.org/wiki/File:Molten_GL7.jpg"
+    }
   },
   {
     "id": "baksteen",
@@ -200,7 +254,13 @@
     "emoji": "🧱",
     "source": "https://nl.wikipedia.org/wiki/Baksteen",
     "funFact": "Een gemiddelde rijwoning bevat zo’n 25.000 bakstenen.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/baksteen.webp",
+    "credit": {
+      "author": "Andrewlister",
+      "license": "Public domain",
+      "url": "https://commons.wikimedia.org/wiki/File:Brick.jpg"
+    }
   },
   {
     "id": "shuttle",
@@ -214,7 +274,13 @@
     ],
     "emoji": "🏸",
     "source": "https://en.wikipedia.org/wiki/Shuttlecock",
-    "funFact": "Een smash met een shuttle haalde ooit meer dan 490 km/u: sneller dan een Formule 1-wagen."
+    "funFact": "Een smash met een shuttle haalde ooit meer dan 490 km/u: sneller dan een Formule 1-wagen.",
+    "image": "objects/shuttle.webp",
+    "credit": {
+      "author": "Stanislas PERRIN",
+      "license": "Public domain",
+      "url": "https://commons.wikimedia.org/wiki/File:Koogan_badminton_feather_shuttlecock_01.JPG"
+    }
   },
   {
     "id": "olympische-medaille",
@@ -258,7 +324,13 @@
     "emoji": "🫀",
     "source": "https://en.wikipedia.org/wiki/Heart",
     "funFact": "Je hart pompt elke dag ongeveer 7.000 liter bloed rond.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/mensenhart.webp",
+    "credit": {
+      "author": "Dguendel",
+      "license": "CC BY 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Dresden,_Deutsches_Hygiene-Museum,_anatomisches_Modell,_Herz.jpg"
+    }
   },
   {
     "id": "speer",
@@ -301,7 +373,13 @@
     "emoji": "🐦",
     "source": "https://en.wikipedia.org/wiki/Bee_hummingbird",
     "funFact": "Een bijkolibrie slaat 80 keer per seconde met zijn vleugels.",
-    "estimate": true
+    "estimate": true,
+    "image": "objects/bijkolibrie.webp",
+    "credit": {
+      "author": "Charles J. Sharp",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Bee_hummingbird_(Mellisuga_helenae)_female_cr.jpg"
+    }
   },
   {
     "id": "honkbal",
@@ -315,7 +393,13 @@
     ],
     "emoji": "⚾",
     "source": "https://en.wikipedia.org/wiki/Baseball_(ball)",
-    "funFact": "Een honkbal moet tussen 142 en 149 g wegen."
+    "funFact": "Een honkbal moet tussen 142 en 149 g wegen.",
+    "image": "objects/honkbal.webp",
+    "credit": {
+      "author": "Onbekend",
+      "license": "CC-BY-SA-2.0",
+      "url": "https://en.wikipedia.org/wiki/File:Baseball_(crop).jpg"
+    }
   },
   {
     "id": "volleybal",
@@ -329,7 +413,13 @@
     ],
     "emoji": "🏐",
     "source": "https://en.wikipedia.org/wiki/Volleyball_(ball)",
-    "funFact": "Volleybal werd in 1895 uitgevonden als rustiger alternatief voor basketbal."
+    "funFact": "Volleybal werd in 1895 uitgevonden als rustiger alternatief voor basketbal.",
+    "image": "objects/volleybal.webp",
+    "credit": {
+      "author": "Petar Milošević",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Mikasa_VLS300_official_beach_volleyball.jpg"
+    }
   },
   {
     "id": "kogel",
@@ -343,7 +433,13 @@
     ],
     "emoji": "⚫",
     "source": "https://en.wikipedia.org/wiki/Shot_put",
-    "funFact": "7,26 kg is precies 16 Engelse pond."
+    "funFact": "7,26 kg is precies 16 Engelse pond.",
+    "image": "objects/kogel.webp",
+    "credit": {
+      "author": "Santeri Viinamäki",
+      "license": "CC BY 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Shot_put_ball.JPG"
+    }
   },
   {
     "id": "halterstang",

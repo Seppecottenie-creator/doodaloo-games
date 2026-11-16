@@ -9,6 +9,8 @@ import type { GameObject } from '../game/types';
 import { endScreen } from './endScreen';
 import { gameScreen } from './gameScreen';
 import { homeScreen } from './homeScreen';
+import { creditsScreen } from './creditsScreen';
+import { preloadScale, weightIcons } from '../scale';
 
 // Mijlpaal 1: de pool zit in de bundle. Vanaf mijlpaal 3 komt het dagelijkse spel van de server.
 const POOL = objects as GameObject[];
@@ -31,6 +33,7 @@ export function startApp(root: HTMLElement) {
         onDaily: daily,
         onDailyResult: dailyResult,
         onPractice: practice,
+        onCredits: () => show(() => creditsScreen(root, POOL, home)),
       }),
     );
 
@@ -107,4 +110,7 @@ export function startApp(root: HTMLElement) {
   }
 
   home();
+  // 3D-balans alvast laden terwijl de speler op home staat
+  const idle = (window as Window & { requestIdleCallback?: (f: () => void) => void }).requestIdleCallback ?? ((f: () => void) => setTimeout(f, 300));
+  idle(() => void preloadScale().then(() => weightIcons()));
 }

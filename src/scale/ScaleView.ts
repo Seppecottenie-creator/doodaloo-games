@@ -1,17 +1,6 @@
 import { emojiSprite, weightSprite, WEIGHT_SIZE } from './sprites';
 import { layoutStack, type Placed, type Slot } from './layout';
-
-export interface ScaleObject {
-  emoji: string;
-  image?: string;
-}
-
-export interface ScaleCallbacks {
-  /** Er landt iets op een schaal. `strength` 0–1. */
-  onLand?: (kind: 'object' | 'weight', idx: number, strength: number) => void;
-  /** De balans komt bijna tot rust na het wegen. */
-  onSettled?: () => void;
-}
+import type { ScaleCallbacks, ScaleLike, ScaleObject } from './types';
 
 interface ItemAnim {
   /** verticale offset t.o.v. de doelpositie (negatief = hoger) */
@@ -32,7 +21,7 @@ const STEP = 1 / 120;
  * - de schaalbodem veert verticaal mee bij elke landing;
  * - de wijzer heeft een eigen kleine veer en trilt na.
  */
-export class ScaleView {
+export class ScaleView implements ScaleLike {
   private ctx: CanvasRenderingContext2D;
   private dpr = 1;
   private W = 360;

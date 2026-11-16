@@ -5,7 +5,8 @@ import type { RoundResult } from '../game/types';
 import { buzz } from '../game/haptics';
 import * as sfx from '../audio/sfx';
 import { t } from '../i18n/nl';
-import { ScaleView } from '../scale/ScaleView';
+import { createScale, weightIcons } from '../scale';
+import type { ScaleLike } from '../scale/types';
 import { paintWeightIcon } from '../scale/sprites';
 import { confetti } from './confetti';
 import { announce, h, reducedMotion, tween } from './dom';
@@ -45,7 +46,8 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
 
   const canvas = h('canvas', { class: 'scale-canvas', role: 'img', 'aria-label': t.game.locked });
   const hint = h('div', { class: 'stage-hint' }, t.game.emptyHint);
-  const stage = h('div', { class: 'stage' }, canvas, hint);
+  const credit = h('div', { class: 'credit' });
+  const stage = h('div', { class: 'stage' }, canvas, hint, credit);
 
   const totalEl = h('output', { class: 'total' }, '0 g');
   const readout = h('div', { class: 'readout' }, h('span', { class: 'readout-label' }, t.game.total), totalEl);
@@ -60,7 +62,15 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     trayBtns.push(btn);
     badges.push(badge);
     tray.append(btn);
-    requestAnimationFrame(() => paintWeightIcon(icon, idx, 46, 32));
+    requestAnimationFrame(() => paintWeightIcon(icon, idx, 46, 34));
+  });
+  // 3D-gerenderde icoontjes zodra Three.js geladen is
+  void weightIcons().then((urls) => {
+    if (!urls) return;
+    trayBtns.forEach((b, i) => {
+      const img = h('img', { class: 'w-icon', src: urls[i], alt: '', 'aria-hidden': 'true', draggable: 'false' });
+      b.querySelector('.w-icon')?.replaceWith(img);
+    });
   });
 
   const clearBtn = h('button', { class: 'btn ghost', type: 'button' }, t.game.clear);
@@ -74,19 +84,12 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   root.replaceChildren(screen);
 
   // ---------- balans ----------
-  const scale = new ScaleView(canvas, {
-    onLand: (kind, idx, strength) => {
-      if (kind === 'object') {
-        sfx.plof(strength);
-        buzz(12);
-      } else {
-        sfx.clink(idx, strength);
-        buzz(idx >= 6 ? 18 : 8);
-      }
-    },
+  let scale!: ScaleLike;
+  let destroyed = false;
+  cleanups.push(() => {
+    destroyed = true;
+    scale?.destroy();
   });
-  cleanups.push(() => scale.destroy());
-
   // ---------- render helpers ----------
   let shownTotal = 0;
   let stopTotal = () => {};
@@ -137,6 +140,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     void card.offsetWidth;
     card.classList.add('enter');
     canvas.setAttribute('aria-label', `${o.name}. ${t.game.locked}`);
+    credit.textContent = o.credit ? `📷 ${o.credit.author} · ${o.credit.license}` : '';
     scale.reset();
     scale.setObject({ emoji: o.emoji, image: o.image ? `${import.meta.env.BASE_URL}${o.image}` : undefined }, drop);
     shownTotal = 0;
@@ -209,8 +213,13 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     const dy = e.clientY - drag.y0;
     if (!drag.ghost) {
       if (Math.hypot(dx, dy) < 10) return;
-      const gc = h('canvas');
-      paintWeightIcon(gc, drag.idx, 72, 56);
+      const src = trayBtns[drag.idx].querySelector<HTMLImageElement>('img.w-icon')?.src;
+      let gc: HTMLElement;
+      if (src) gc = h('img', { src, alt: '' });
+      else {
+        gc = h('canvas');
+        paintWeightIcon(gc as HTMLCanvasElement, drag.idx, 72, 56);
+      }
       drag.ghost = h('div', { class: 'drag-ghost', 'aria-hidden': 'true' }, gc);
       document.body.append(drag.ghost);
       buzz(4);
@@ -249,7 +258,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
 
   // Tik op een gewicht op de schaal = weghalen
   canvas.addEventListener('pointerdown', (e) => {
-    if (s.phase !== 'placing') return;
+    if (s.phase !== 'placing' || !scale) return;
     const id = scale.hitTest(e.clientX, e.clientY);
     if (id === null) return;
     const idx = scale.removeWeight(id);
@@ -300,15 +309,15 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     const o = s.current;
     const last = s.round >= s.objects.length - 1;
     const scoreNum = h('span', { class: 'big', id: 'sheet-score' }, '0');
+    const band = r.score >= 90 ? 'g' : r.score >= 60 ? 'y' : r.score >= 30 ? 'o' : 'r';
     const actualEl = h('b', { class: 'actual' }, formatGrams(r.guess));
     const nextBtn = h('button', { class: 'btn primary', type: 'button' }, last ? t.reveal.finish : t.reveal.next);
     sheet.replaceChildren(
-      h('div', { class: 'sheet-top' }, h('div', { class: 'sheet-score' }, scoreNum, h('span', { class: 'of' }, '/100')), h('p', { class: 'reaction' }, reaction(r))),
+      h('div', { class: 'sheet-top' }, h('div', { class: `sheet-score ${band}` }, scoreNum, h('span', { class: 'of' }, '/100')), h('p', { class: 'reaction' }, reaction(r))),
       h(
         'div',
         { class: 'compare' },
         h('div', null, h('small', null, t.reveal.yourGuess), h('b', null, formatGrams(r.guess))),
-        h('div', { class: 'arrow', 'aria-hidden': 'true' }, '→'),
         h('div', null, h('small', null, t.reveal.actual), actualEl),
       ),
       h('div', { class: 'fact' }, h('small', null, t.reveal.funFact), h('p', null, o.funFact)),
@@ -368,6 +377,24 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     });
   }
 
-  renderObject(true);
+  // tot de balans er is: lade uit
+  trayBtns.forEach((b) => (b.disabled = true));
+  weighBtn.disabled = true;
+  void createScale(canvas, {
+    onLand: (kind, idx, strength) => {
+      if (kind === 'object') {
+        sfx.plof(strength);
+        buzz(12);
+      } else {
+        sfx.clink(idx, strength);
+        buzz(idx >= 6 ? 18 : 8);
+      }
+    },
+  }).then((sc) => {
+    if (destroyed) return sc.destroy();
+    scale = sc;
+    canvas.classList.add('ready');
+    renderObject(true);
+  });
   return () => cleanups.forEach((f) => f());
 }

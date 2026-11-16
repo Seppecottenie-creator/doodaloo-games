@@ -14,6 +14,8 @@ export interface GameObject {
   /** Verplicht bij echte voorwerpen. */
   source?: string;
   funFact: string;
+  /** Bronvermelding van de foto (Wikimedia Commons). */
+  credit?: { author: string; license: string; url: string };
   /** True als het gewicht een schatting of gemiddelde is ("± 8 t (schatting)"). */
   estimate?: boolean;
 }

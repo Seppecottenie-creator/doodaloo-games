@@ -1,7 +1,7 @@
 /** Alle teksten van het spel. Voeg later en.ts toe met dezelfde vorm. */
 export const nl = {
   appName: 'Weegschaal',
-  tagline: 'Hoe zwaar is het? Leg de gewichten en weeg.',
+  tagline: 'Hoe zwaar is het? Leg gewichten op de balans en weeg.',
   home: {
     playDaily: (n: number) => `Speel vandaag (#${n})`,
     dailyDone: (n: number) => `Resultaat van vandaag (#${n})`,
@@ -14,7 +14,9 @@ export const nl = {
     ],
     stats: (played: number, best: number) => `${played} gespeeld · beste ${best}`,
     newDailyIn: 'Nieuw spel over',
-    localNote: 'Het dagelijkse spel draait voorlopig lokaal. Ranglijsten komen eraan.',
+    localNote: 'Ranglijsten komen eraan.',
+    credits: 'Fotocredits',
+    creditsIntro: 'Foto’s van Wikimedia Commons, gebruikt onder hun vrije licentie. De achtergrond werd verwijderd.',
   },
   game: {
     round: (r: number, n: number) => `Ronde ${r} van ${n}`,
