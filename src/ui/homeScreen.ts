@@ -10,10 +10,12 @@ import { Bubble } from './bubble';
 import { formatCountdown, soundButton } from './common';
 import { h } from './dom';
 
+export type PracticeKind = 'mix' | 'real' | 'fictional';
+
 export interface HomeOpts {
   onDaily: () => void;
   onDailyResult: () => void;
-  onPractice: () => void;
+  onPractice: (kind: PracticeKind) => void;
   onCredits: () => void;
 }
 
@@ -28,6 +30,12 @@ export function dailyStreak(days: Record<string, { done: boolean }>, today: stri
   return n;
 }
 
+const ICON = {
+  solo: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
+  daily: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+  star: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z" fill="#B79CFF"/></svg>',
+};
+
 export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   const st = load();
   const day = dayString();
@@ -40,50 +48,91 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   const best = Math.max(st.practice.best, ...dailyTotals, 0);
   const streak = dailyStreak(st.daily, day);
 
-  const daily = h(
-    'button',
-    { class: 'btn primary big cta', type: 'button' },
-    h('span', { class: 'cta-main' }, done ? t.home.dailyDone(n) : inProgress ? t.home.continueDaily(n, rec.rounds.length) : t.home.playDaily(n)),
-    h('span', { class: 'cta-arrow', 'aria-hidden': 'true' }, '→'),
-  );
-  daily.addEventListener('click', done ? opts.onDailyResult : opts.onDaily);
-  const practice = h('button', { class: 'btn secondary big', type: 'button' }, t.home.practice);
-  practice.addEventListener('click', opts.onPractice);
+  let kind: PracticeKind = 'mix';
+  const tabs = h('div', { class: 'tabs', role: 'tablist', 'aria-label': 'Category' });
+  const tabList: [PracticeKind, string][] = [
+    ['mix', 'mix'],
+    ['real', 'real'],
+    ['fictional', 'fictional'],
+  ];
+  for (const [k, label] of tabList) {
+    const b = h('button', { class: `tab${k === kind ? ' on' : ''}`, type: 'button', role: 'tab', 'aria-selected': String(k === kind) }, label);
+    b.addEventListener('click', () => {
+      kind = k;
+      tabs.querySelectorAll('.tab').forEach((x) => {
+        x.classList.toggle('on', x === b);
+        x.setAttribute('aria-selected', String(x === b));
+      });
+    });
+    tabs.append(b);
+  }
 
-  const countdown = h('span', { class: 'mono' });
+  const solo = h('button', { class: 'round-btn', type: 'button', 'aria-label': t.home.practice });
+  solo.innerHTML = ICON.solo;
+  solo.addEventListener('click', () => opts.onPractice(kind));
+  const daily = h('button', { class: 'round-btn', type: 'button', 'aria-label': done ? t.home.dailyDone(n) : t.home.playDaily(n) });
+  daily.innerHTML = ICON.daily;
+  daily.addEventListener('click', done ? opts.onDailyResult : opts.onDaily);
+
+  const countdown = h('span', null);
   const tickCd = () => (countdown.textContent = formatCountdown(msUntilNextDay()));
   tickCd();
   const iv = window.setInterval(tickCd, 1000);
 
-  const stat = (value: string | number, label: string) => h('div', { class: 'stat' }, h('b', null, String(value)), h('span', null, label));
-  const stats = h('div', { class: 'stats' }, stat(played, t.home.played), stat(best, t.home.best), stat(`${streak}🔥`, t.home.streak));
-
-  const steps = h(
-    'ol',
-    { class: 'steps' },
-    ...t.home.howSteps.map(([a, b], i) => h('li', { class: 'step', style: `--i:${i}` }, h('span', { class: 'step-n' }, String(i + 1)), h('div', null, h('b', null, a), h('span', null, b)))),
-  );
-  const credits = h('button', { class: 'link small', type: 'button' }, t.home.credits);
-  credits.addEventListener('click', opts.onCredits);
-
-  const heroCanvas = h('canvas', { class: 'hero-canvas', role: 'img', 'aria-label': t.appName });
+  const heroCanvas = h('canvas', { class: 'hero-canvas', role: 'img', 'aria-label': 'Balance scale with Noodle' });
   const hero = h('div', { class: 'hero' }, heroCanvas);
   const bubble = new Bubble(hero);
+
+  const brand = h('div', { class: 'wordmark' });
+  brand.innerHTML = `${ICON.star}<span>doodaloo</span>`;
+
+  const card = h(
+    'section',
+    { class: 'home-card' },
+    h('div', { class: 'card-head' }, h('h1', null, 'weeg', h('span', { class: 'accent' }, 'schaal')), h('p', { class: 'tagline' }, t.tagline), tabs),
+    hero,
+    h(
+      'div',
+      { class: 'card-foot' },
+      h('div', { class: 'foot-group' }, h('span', { class: 'foot-label' }, t.home.practice), h('div', { class: 'foot-btns' }, solo)),
+      h(
+        'div',
+        { class: 'foot-group right' },
+        h('span', { class: 'foot-label' }, done ? 'Done today' : inProgress ? `Daily · ${rec.rounds.length}/5` : 'Daily'),
+        h('div', { class: 'daily-ring' }, daily, h('span', { class: 'ring-tag mono' }, `#${String(n).padStart(3, '0')}`)),
+      ),
+    ),
+  );
+
+  const stat = (value: string | number, label: string, cls = '') => h('div', { class: `stat ${cls}` }, h('b', null, String(value)), h('span', { class: 'mono' }, label));
+  const stats = h('div', { class: 'stats' }, stat(played, 'PLAYED'), stat(best, 'BEST', 'lime'), stat(streak, 'STREAK', 'lilac'));
+
+  const tickerItems = () => [
+    h('span', null, '✦ TODAY: 5 MYSTERY OBJECTS'),
+    h('span', { class: 'pink' }, '✦ ANIMALS · POKÉMON · LANDMARKS'),
+    h('span', null, '✦ ONE TRY PER DAY'),
+    h('span', { class: 'lime' }, '✦ NEW SCALE IN ', countdown.cloneNode(true)),
+  ];
+  const ticker = h('div', { class: 'ticker mono', 'aria-hidden': 'true' }, h('div', { class: 'ticker-track' }, ...tickerItems(), ...tickerItems()));
+
+  const credits = h('button', { class: 'link small', type: 'button' }, t.home.credits);
+  credits.addEventListener('click', opts.onCredits);
 
   const screen = h(
     'main',
     { class: 'screen home' },
-    h('div', { class: 'home-top' }, h('span', { class: 'brand-mini' }, t.appName), soundButton()),
-    hero,
-    h('div', { class: 'brand' }, h('h1', null, t.appName), h('p', { class: 'tagline' }, t.tagline)),
-    h('div', { class: 'home-actions' }, daily, practice, h('p', { class: 'next-in' }, `${t.home.newDailyIn} `, countdown)),
+    h('div', { class: 'home-top' }, brand, h('div', { class: 'top-right' }, h('span', { class: 'pill mono' }, `#${String(n).padStart(3, '0')}`), soundButton())),
+    card,
     stats,
-    h('section', { class: 'how' }, h('h2', null, t.home.how), steps),
+    ticker,
+    h('section', { class: 'how' }, h('h2', { class: 'mono' }, 'HOW IT WORKS'), h('ol', { class: 'steps' }, ...t.home.howSteps.map(([a, b], i) => h('li', { class: 'step' }, h('span', { class: 'step-n mono' }, `0${i + 1}`), h('div', null, h('b', null, a), h('span', null, b)))))),
     h('p', { class: 'muted small center foot' }, t.home.leaderboardSoon, ' · ', credits),
   );
   root.replaceChildren(screen);
 
-  // levende balans bovenaan: begroet je en mag geprord worden
+  // ticker-countdown live houden
+  const iv2 = window.setInterval(() => ticker.querySelectorAll('.lime span').forEach((x) => (x.textContent = countdown.textContent)), 1000);
+
   let scale: ScaleLike | null = null;
   let dead = false;
   const timers: number[] = [];
@@ -92,8 +141,8 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
     scale = sc;
     heroCanvas.classList.add('ready');
     sc.setObject({ emoji: '🐘', image: `${import.meta.env.BASE_URL}objects/olifant.webp` }, true);
-    timers.push(window.setTimeout(() => sc.addWeight(9), 900));
-    timers.push(window.setTimeout(() => bubble.show(pick(t.home.greetings), sc.headScreenPos?.() ?? null, 3200), 1500));
+    timers.push(window.setTimeout(() => sc.addWeight(10), 900));
+    timers.push(window.setTimeout(() => bubble.show(pick(t.home.greetings), sc.headScreenPos?.() ?? null, 3200), 1700));
   });
   heroCanvas.addEventListener('pointerdown', (e) => {
     if (!scale) return;
@@ -108,6 +157,7 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   return () => {
     dead = true;
     clearInterval(iv);
+    clearInterval(iv2);
     timers.forEach(clearTimeout);
     scale?.destroy();
     bubble.destroy();

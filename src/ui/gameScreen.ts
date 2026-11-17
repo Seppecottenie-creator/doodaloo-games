@@ -28,33 +28,37 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   const cleanups: (() => void)[] = [];
 
   // ---------- opbouw ----------
-  const roundLabel = h('span', { class: 'hud-round' });
+  const roundLabel = h('span', { class: 'hud-round mono' });
   const segs = h('ol', { class: 'segs', 'aria-hidden': 'true' });
   const scoreEl = h('output', { class: 'hud-score', 'aria-label': t.game.score }, String(s.total));
-  const quit = h('button', { class: 'icon-btn', type: 'button', 'aria-label': t.game.quit, title: t.game.quit }, '✕');
+  const quit = h('button', { class: 'quit-btn', type: 'button', title: t.game.quit });
+  quit.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/></svg>';
+  quit.append(t.game.quit);
   const top = h(
     'header',
     { class: 'hud' },
-    quit,
-    h('div', { class: 'hud-mid' }, roundLabel, segs),
-    h('div', { class: 'hud-right' }, h('span', { class: 'hud-score-wrap' }, h('span', { class: 'star', 'aria-hidden': 'true' }, '★'), scoreEl), soundButton()),
+    h('div', { class: 'hud-row' }, quit, segs, h('div', { class: 'hud-right' }, scoreEl, soundButton())),
+    roundLabel,
   );
 
   const nameEl = h('h2', { class: 'obj-name' });
   const tagEl = h('span', { class: 'tag' });
+  const catEl = h('span', { class: 'tag cat' });
   const descEl = h('p', { class: 'obj-desc' });
-  const credit = h('p', { class: 'credit' });
-  const card = h('section', { class: 'obj-card', 'aria-live': 'polite' }, tagEl, nameEl, descEl, credit);
+  const card = h('section', { class: 'obj-card', 'aria-live': 'polite' }, h('div', { class: 'tags' }, tagEl, catEl), nameEl, descEl);
 
   const canvas = h('canvas', { class: 'scale-canvas', role: 'img', 'aria-label': t.game.locked });
   const hint = h('div', { class: 'stage-hint' }, t.game.emptyHint);
   const intro = h('div', { class: 'round-intro', 'aria-hidden': 'true' });
-  const stage = h('div', { class: 'stage' }, canvas, hint, intro);
+  const panA = h('span', { class: 'stage-label mono left' }, 'PAN A · LOCKED');
+  const panB = h('span', { class: 'stage-label mono right' }, 'PAN B · 0 ITEMS');
+  const credit = h('p', { class: 'credit' });
+  const stage = h('div', { class: 'stage' }, canvas, panA, panB, hint, credit, intro);
   const bubble = new Bubble(stage);
 
   const totalEl = h('output', { class: 'total' }, '0 g');
   const deltas = h('div', { class: 'deltas', 'aria-hidden': 'true' });
-  const readout = h('div', { class: 'readout' }, h('span', { class: 'readout-label' }, t.game.total), h('div', { class: 'total-wrap' }, totalEl, deltas));
+  const readout = h('div', { class: 'readout' }, h('span', { class: 'readout-label mono' }, t.game.total.toUpperCase()), h('div', { class: 'total-wrap' }, totalEl, deltas));
 
   const trayBtns: HTMLButtonElement[] = [];
   const badges: HTMLSpanElement[] = [];
@@ -77,8 +81,8 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     });
   });
 
-  const clearBtn = h('button', { class: 'btn ghost clear', type: 'button', 'aria-label': t.game.clear, title: t.game.clear }, '↺');
-  const weighBtn = h('button', { class: 'btn primary weigh', type: 'button' }, h('span', null, t.game.weigh));
+  const clearBtn = h('button', { class: 'btn ghost clear', type: 'button', title: t.game.clear }, t.game.clear.toLowerCase());
+  const weighBtn = h('button', { class: 'btn weigh', type: 'button' }, h('span', { class: 'weigh-label' }, t.game.weigh), h('span', { class: 'weigh-icon', 'aria-hidden': 'true' }, '↓'));
   const actions = h('div', { class: 'actions' }, clearBtn, weighBtn);
 
   const sheet = h('div', { class: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': 'sheet-score' });
@@ -139,12 +143,16 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     });
     weighBtn.disabled = s.phase !== 'placing' || s.guess <= 0;
     clearBtn.disabled = s.phase !== 'placing' || s.guess <= 0;
+    const items = s.counts.reduce((a, b) => a + b, 0);
+    panB.textContent = `PAN B · ${items} ${items === 1 ? 'ITEM' : 'ITEMS'}`;
+    panA.textContent = s.phase === 'placing' ? 'PAN A · LOCKED' : 'PAN A · RELEASED';
     hint.classList.toggle('hide', s.guess > 0 || s.phase !== 'placing');
   }
 
   function renderHud() {
     const n = s.objects.length;
-    roundLabel.textContent = t.game.round(Math.min(s.round + 1, n), n);
+    const cat = s.current?.category ?? '';
+    roundLabel.textContent = `ROUND ${Math.min(s.round + 1, n)}/${n}${cat ? ` · ${cat.toUpperCase()}` : ''}`;
     segs.replaceChildren(
       ...s.objects.map((_, i) => {
         const r = s.results[i];
@@ -161,9 +169,14 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
 
   function renderObject() {
     const o = s.current;
-    nameEl.textContent = o.name;
+    // eerste woord wit, de rest lila (zoals in de mockup)
+    const words = o.name.split(' ');
+    nameEl.replaceChildren(words[0], words.length > 1 ? ' ' : '', words.length > 1 ? h('span', { class: 'accent' }, words.slice(1).join(' ')) : '');
+    nameEl.classList.toggle('long', o.name.length > 22);
     tagEl.textContent = o.fictional ? t.game.fictional : t.game.real;
     tagEl.className = `tag ${o.fictional ? 'fict' : 'real'}`;
+    catEl.textContent = o.franchise ?? o.category ?? '';
+    catEl.hidden = !catEl.textContent;
     descEl.textContent = o.description;
     credit.textContent = o.credit ? `Photo: ${o.credit.author} · ${o.credit.license}` : '';
     card.classList.remove('enter');
@@ -183,7 +196,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     intro.classList.add('show');
     sfx.whoosh();
     later(reducedMotion() ? 0 : 650, () => {
-      scale.setObject({ emoji: o.emoji, image: o.image ? `${import.meta.env.BASE_URL}${o.image}` : undefined }, true);
+      scale.setObject({ emoji: o.emoji, image: o.image ? `${import.meta.env.BASE_URL}${o.image}` : undefined, title: o.name, sub: o.franchise ?? o.category }, true);
     });
     armIdle();
   }

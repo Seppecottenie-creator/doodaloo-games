@@ -103,7 +103,8 @@ export function roastLine(r: RoundResult, rnd: () => number = Math.random): stri
 }
 
 /** Mood of the scale's face after the reveal. */
-export function moodFor(score: number): 'happy' | 'smug' | 'meh' | 'angry' | 'dead' {
+export function moodFor(score: number): 'cool' | 'happy' | 'smug' | 'meh' | 'angry' | 'dead' {
+  if (score >= 100) return 'cool';
   if (score >= 90) return 'happy';
   if (score >= 60) return 'smug';
   if (score >= 30) return 'meh';

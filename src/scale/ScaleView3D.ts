@@ -1,18 +1,21 @@
 import {
   ACESFilmicToneMapping,
+  AdditiveBlending,
   BoxGeometry,
+  BufferAttribute,
   CanvasTexture,
+  CapsuleGeometry,
+  Color,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
   Group,
   HemisphereLight,
-  InstancedMesh,
   LatheGeometry,
   Material,
-  Matrix4,
   Mesh,
   MeshBasicMaterial,
+  MeshPhysicalMaterial,
   MeshStandardMaterial,
   Object3D,
   PCFSoftShadowMap,
@@ -20,9 +23,7 @@ import {
   Plane,
   PlaneGeometry,
   PMREMGenerator,
-  Quaternion,
   Raycaster,
-  RingGeometry,
   Scene,
   SphereGeometry,
   Sprite,
@@ -48,15 +49,16 @@ const STEP = 1 / 120;
 const DEG = Math.PI / 180;
 
 // Afmetingen (meter)
-const PIVOT_Y = 2.25;
-const HEAD_Y = PIVOT_Y + 0.42;
+const PIVOT_Y = 2.2;
+const DIAL_R = 0.46;
 /** Zoveel exemplaren van één gewicht tonen we; de rest staat als ×N-label bij de stapel. */
 const VISIBLE_PER_KIND = 4;
 const R = 1.42;
-const L = 1.2;
-const PAN_R = 0.64;
-const NEEDLE = 1.15;
-/** meter per "px" uit WEIGHT_SIZE */
+const L = 1.16;
+const PAN_R = 0.62;
+/** Noodle staat rechts naast de sokkel, klein en een beetje vooraan. */
+const NOODLE_POS = new Vector3(1.86, 0, 0.42);
+const NOODLE_H = 0.82;
 const M = ((PAN_R * 2) / 150) * 1.9;
 const GRAVITY = 22;
 
@@ -71,27 +73,6 @@ function canvasTex(w: number, h: number, draw: (c: CanvasRenderingContext2D) => 
   t.colorSpace = SRGBColorSpace;
   t.anisotropy = 4;
   return t;
-}
-
-function woodTexture() {
-  return canvasTex(512, 128, (c) => {
-    const g = c.createLinearGradient(0, 0, 0, 128);
-    g.addColorStop(0, '#6b4226');
-    g.addColorStop(1, '#4a2b17');
-    c.fillStyle = g;
-    c.fillRect(0, 0, 512, 128);
-    let s = 3;
-    const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < 70; i++) {
-      c.strokeStyle = `rgba(${rnd() > 0.5 ? '30,15,5' : '140,90,50'},${0.12 + rnd() * 0.2})`;
-      c.lineWidth = 0.6 + rnd() * 1.6;
-      const y = rnd() * 128;
-      c.beginPath();
-      c.moveTo(0, y);
-      for (let x = 0; x <= 512; x += 32) c.lineTo(x, y + Math.sin(x / 60 + i) * 3 + (rnd() - 0.5) * 2);
-      c.stroke();
-    }
-  });
 }
 
 function labelTexture(text: string, bg: string | null, fg: string, w = 256, h = 128, opts: { stripes?: boolean; ribs?: boolean } = {}) {
@@ -146,66 +127,111 @@ function shadowBlobTexture() {
 }
 
 /** Emoji als goudkleurig beeldje: één consistente stijl voor alles zonder foto (o.a. verzonnen personages). */
-function emojiTexture(emoji: string) {
-  return canvasTex(512, 512, (c) => {
-    const shape = document.createElement('canvas');
-    shape.width = shape.height = 512;
-    const s = shape.getContext('2d')!;
-    s.font = '380px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-    s.textAlign = 'center';
-    s.textBaseline = 'middle';
-    s.fillText(emoji, 256, 280);
-    // lichtheid van de emoji bewaren als reliëf, kleur vervangen door messing
-    const img = s.getImageData(0, 0, 512, 512);
-    const d = img.data;
-    for (let k = 0; k < d.length; k += 4) {
-      if (!d[k + 3]) continue;
-      const l = (0.3 * d[k] + 0.59 * d[k + 1] + 0.11 * d[k + 2]) / 255;
-      const t = 0.25 + l * 0.85;
-      d[k] = Math.min(255, 70 + 200 * t);
-      d[k + 1] = Math.min(255, 45 + 150 * t);
-      d[k + 2] = Math.min(255, 10 + 60 * t);
+
+/** Paarse vloergloed zoals in de render. */
+function floorTexture() {
+  return canvasTex(256, 256, (c) => {
+    const g = c.createRadialGradient(128, 128, 4, 128, 128, 128);
+    g.addColorStop(0, 'rgba(150,120,220,0.55)');
+    g.addColorStop(0.45, 'rgba(110,80,190,0.22)');
+    g.addColorStop(1, 'rgba(60,40,120,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 256, 256);
+  });
+}
+
+/** Hologramkaart voor alles zonder foto (bv. bekende fictieve figuren): geen beschermde afbeeldingen nodig. */
+function hologramTexture(title: string, sub: string, glyph: string) {
+  return canvasTex(512, 640, (c) => {
+    const r = 46;
+    const path = () => {
+      c.beginPath();
+      if (c.roundRect) c.roundRect(10, 10, 492, 620, r);
+      else c.rect(10, 10, 492, 620);
+    };
+    // glazen kaart
+    const bg = c.createLinearGradient(0, 0, 0, 640);
+    bg.addColorStop(0, 'rgba(40,36,70,0.92)');
+    bg.addColorStop(1, 'rgba(14,12,26,0.95)');
+    c.fillStyle = bg;
+    path();
+    c.fill();
+    // iriserende rand
+    const edge = c.createLinearGradient(0, 0, 512, 640);
+    edge.addColorStop(0, '#7EE8E2');
+    edge.addColorStop(0.5, '#B79CFF');
+    edge.addColorStop(1, '#E25CF1');
+    c.lineWidth = 8;
+    c.strokeStyle = edge;
+    path();
+    c.stroke();
+    // raster
+    c.save();
+    path();
+    c.clip();
+    c.strokeStyle = 'rgba(183,156,255,0.12)';
+    c.lineWidth = 2;
+    for (let x = 10; x < 512; x += 40) {
+      c.beginPath();
+      c.moveTo(x, 0);
+      c.lineTo(x, 640);
+      c.stroke();
     }
-    s.putImageData(img, 0, 0);
-    // glans van boven
-    s.globalCompositeOperation = 'source-atop';
-    const g = s.createLinearGradient(0, 60, 0, 470);
-    g.addColorStop(0, 'rgba(255,245,200,0.55)');
-    g.addColorStop(0.45, 'rgba(255,220,120,0)');
-    g.addColorStop(1, 'rgba(40,20,0,0.45)');
-    s.fillStyle = g;
-    s.fillRect(0, 0, 512, 512);
-    c.shadowColor = 'rgba(255,190,70,0.35)';
-    c.shadowBlur = 18;
-    c.drawImage(shape, 0, 0);
+    for (let y = 10; y < 640; y += 40) {
+      c.beginPath();
+      c.moveTo(0, y);
+      c.lineTo(512, y);
+      c.stroke();
+    }
+    const glow = c.createRadialGradient(256, 280, 10, 256, 280, 220);
+    glow.addColorStop(0, 'rgba(183,156,255,0.45)');
+    glow.addColorStop(1, 'rgba(183,156,255,0)');
+    c.fillStyle = glow;
+    c.fillRect(0, 0, 512, 640);
+    c.restore();
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillStyle = '#7EE8E2';
+    c.font = '700 30px "JetBrains Mono", monospace';
+    c.fillText(sub.toUpperCase(), 256, 70);
+    c.font = '220px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    c.fillStyle = '#fff';
+    c.fillText(glyph, 256, 290);
+    c.font = '800 64px Inter, system-ui, sans-serif';
+    let size = 64;
+    while (c.measureText(title).width > 440 && size > 28) {
+      size -= 4;
+      c.font = `800 ${size}px Inter, system-ui, sans-serif`;
+    }
+    c.fillText(title, 256, 540);
   });
 }
 
 class Mats {
-  brass = new MeshStandardMaterial({ color: 0xd9ad4a, metalness: 1, roughness: 0.22 });
-  brassRight = new MeshStandardMaterial({ color: 0xd9ad4a, metalness: 1, roughness: 0.22, emissive: 0xffb43a, emissiveIntensity: 0 });
-  darkBrass = new MeshStandardMaterial({ color: 0x9c7424, metalness: 1, roughness: 0.35 });
-  iron = new MeshStandardMaterial({ color: 0x2d2e33, metalness: 0.65, roughness: 0.5 });
-  ironDark = new MeshStandardMaterial({ color: 0x1a1b1f, metalness: 0.6, roughness: 0.55 });
-  steel = new MeshStandardMaterial({ color: 0xb8c0c8, metalness: 1, roughness: 0.3 });
-  concrete = new MeshStandardMaterial({ color: 0xa3a29b, metalness: 0, roughness: 0.95 });
-  wood = new MeshStandardMaterial({ map: woodTexture(), roughness: 0.55, metalness: 0 });
-  dial = new MeshStandardMaterial({ color: 0xf2ead6, roughness: 0.6, metalness: 0, side: DoubleSide });
-  tick = new MeshStandardMaterial({ color: 0x3a2e1a, roughness: 0.6 });
-  red = new MeshStandardMaterial({ color: 0xd2382b, roughness: 0.4 });
-  lockBrass = new MeshStandardMaterial({ color: 0xd9ad4a, metalness: 1, roughness: 0.25, transparent: true });
-  lockSteel = new MeshStandardMaterial({ color: 0xb8c0c8, metalness: 1, roughness: 0.3, transparent: true });
+  chrome = new MeshStandardMaterial({ color: 0xeef0f6, metalness: 1, roughness: 0.06 });
+  titanium = new MeshStandardMaterial({ color: 0x1a1b21, metalness: 0.85, roughness: 0.38 });
+  irid = new MeshPhysicalMaterial({ color: 0xbff5f0, metalness: 1, roughness: 0.12, iridescence: 1, iridescenceIOR: 1.9, iridescenceThicknessRange: [200, 900] });
+  glass = new MeshPhysicalMaterial({ color: 0x0b0a12, metalness: 0.5, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.85, side: DoubleSide, envMapIntensity: 0.3 });
+  glassRight = new MeshPhysicalMaterial({ color: 0x0b0a12, metalness: 0.5, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.85, side: DoubleSide, envMapIntensity: 0.3, emissive: 0xb79cff, emissiveIntensity: 0 });
+  aqua = new MeshBasicMaterial({ color: 0x7ee8e2, toneMapped: false });
+  pink = new MeshBasicMaterial({ color: 0xff5fd8, toneMapped: false });
+  tick = new MeshBasicMaterial({ color: 0xd8d2ff, toneMapped: false, transparent: true, opacity: 0.75 });
+  // gewichten: chroom, gunmetal, grafiet
+  brass = new MeshStandardMaterial({ color: 0xd3d7e1, metalness: 1, roughness: 0.16 });
+  iron = new MeshStandardMaterial({ color: 0x2a2c35, metalness: 0.8, roughness: 0.32 });
+  ironDark = new MeshStandardMaterial({ color: 0x15161b, metalness: 0.7, roughness: 0.4 });
+  steel = new MeshStandardMaterial({ color: 0xc6ccd6, metalness: 1, roughness: 0.22 });
+  concrete = new MeshStandardMaterial({ color: 0x55575f, metalness: 0.1, roughness: 0.85 });
+  safe = new MeshStandardMaterial({ color: 0x2a2342, metalness: 0.6, roughness: 0.35 });
+  rubber = new MeshStandardMaterial({ color: 0x131317, metalness: 0.1, roughness: 0.7 });
+  lockBody = new MeshStandardMaterial({ color: 0xeef0f6, metalness: 1, roughness: 0.1, transparent: true });
+  lockShackle = new MeshStandardMaterial({ color: 0x7ee8e2, metalness: 0.6, roughness: 0.2, transparent: true });
   blob = new MeshBasicMaterial({ map: shadowBlobTexture(), transparent: true, depthWrite: false });
-  white = new MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0 });
-  black = new MeshStandardMaterial({ color: 0x0b0b0d, roughness: 0.2, metalness: 0 });
-  mouth = new MeshStandardMaterial({ color: 0x2a0d08, roughness: 0.6 });
-  cheek = new MeshBasicMaterial({ color: 0xff6b5a, transparent: true, opacity: 0 });
-  safe = new MeshStandardMaterial({ color: 0x2f5a3e, metalness: 0.5, roughness: 0.4 });
-  rubber = new MeshStandardMaterial({ color: 0x1c1c20, metalness: 0.1, roughness: 0.75 });
+  floor = new MeshBasicMaterial({ map: floorTexture(), transparent: true, depthWrite: false });
+  black = new MeshPhysicalMaterial({ color: 0x050507, roughness: 0.08, metalness: 0, clearcoat: 1 });
+  white = new MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+  lime = new MeshBasicMaterial({ color: 0xd7ff4a, transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
 }
-
-// ---------- gewichtmodellen ----------
-
 function buildWeight(idx: number, mats: Mats): { group: Group; w: number; h: number } {
   const [pw, ph] = WEIGHT_SIZE[idx];
   const w = pw * M;
@@ -395,138 +421,220 @@ interface Puff {
 }
 
 /** Het gezicht van de balans: googly eyes, wenkbrauwen en een mond. */
-class Face {
-  group = new Group();
-  private eyes: Group[] = [];
-  private pupils: Mesh[] = [];
-  private crosses: Group[] = [];
-  private brows: Mesh[] = [];
-  private mouths: Record<string, Mesh> = {};
-  private cheeks: Mesh[] = [];
-  pupil = new Vector2();
-  pupilV = new Vector2();
-  look = new Vector2();
-  blinkT = 0;
-  bob = 0;
-  bobV = 0;
-  wob = 0;
-  wobV = 0;
-  mood: Mood = 'idle';
 
-  constructor(mats: Mats) {
-    const g = this.group;
-    const head = new Mesh(new SphereGeometry(0.27, 40, 28), mats.brass);
-    head.scale.set(1.08, 0.94, 0.9);
-    head.castShadow = true;
-    g.add(head);
+type EyeMode = 'lid' | 'wide' | 'line' | 'shades';
+
+/** Noodle: de mascotte. Capsule met kleurverloop en chromen ring; reageert op wat er op de balans gebeurt. */
+class Noodle {
+  group = new Group();
+  private inner = new Group();
+  private eyes: Record<EyeMode, Object3D[]> = { lid: [], wide: [], line: [], shades: [] };
+  private mouth: Mesh;
+  private mouthO: Mesh;
+  private glow: Mesh;
+  private pupils: Mesh[] = [];
+  mood: Mood = 'idle';
+  sq = 0;
+  sqV = 0;
+  sqT = 0;
+  hop = 0;
+  hopV = 0;
+  tilt = 0;
+  turn = 0;
+  turnT = 0;
+  blinkT = 0;
+  glowT = 0;
+
+  constructor(private mats: Mats) {
+    const r = 0.17;
+    const len = NOODLE_H - 2 * r;
+    const geo = new CapsuleGeometry(r, len, 12, 32);
+    // kleurverloop: aqua boven, violet onder, met een zachte overgang aan de ring
+    const pos = geo.attributes.position;
+    const cols = new Float32Array(pos.count * 3);
+    const top = new Color(0x5fd8cf);
+    const mid = new Color(0x6fb7ee);
+    const bot = new Color(0x6d3fe0);
+    const tmp = new Color();
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i) + NOODLE_H / 2;
+      const t = y / NOODLE_H;
+      if (t > 0.5) tmp.copy(mid).lerp(top, Math.min(1, (t - 0.5) / 0.35));
+      else tmp.copy(bot).lerp(mid, Math.max(0, (t - 0.38) / 0.12));
+      cols.set([tmp.r, tmp.g, tmp.b], i * 3);
+    }
+    geo.setAttribute('color', new BufferAttribute(cols, 3));
+    const skin = new MeshPhysicalMaterial({ vertexColors: true, roughness: 0.5, clearcoat: 0.5, clearcoatRoughness: 0.35, envMapIntensity: 0.6 });
+    const body = new Mesh(geo, skin);
+    body.position.y = NOODLE_H / 2;
+    body.castShadow = true;
+    this.inner.add(body);
+    const ring = new Mesh(new TorusGeometry(r + 0.004, 0.008, 10, 48), mats.chrome);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = NOODLE_H * 0.44;
+    this.inner.add(ring);
     for (const sx of [-1, 1]) {
-      const eye = new Group();
-      eye.position.set(sx * 0.105, 0.04, 0.2);
-      const white = new Mesh(new SphereGeometry(0.088, 24, 18), mats.white);
-      white.scale.z = 0.6;
-      const pupil = new Mesh(new SphereGeometry(0.042, 16, 12), mats.black);
-      pupil.position.z = 0.045;
-      const cross = new Group();
-      for (const a of [1, -1]) {
-        const bar = new Mesh(new BoxGeometry(0.11, 0.022, 0.01), mats.black);
-        bar.rotation.z = (a * Math.PI) / 4;
-        cross.add(bar);
-      }
-      cross.position.z = 0.055;
-      cross.visible = false;
-      eye.add(white, pupil, cross);
-      g.add(eye);
-      this.eyes.push(eye);
+      const arm = new Mesh(new CapsuleGeometry(0.032, 0.05, 6, 12), skin);
+      arm.position.set(sx * (r + 0.015), NOODLE_H * 0.47, 0.02);
+      arm.rotation.z = sx * 0.7;
+      this.inner.add(arm);
+    }
+    const ey = NOODLE_H * 0.72;
+    const ez = Math.sqrt(r * r - 0.06 * 0.06) - 0.004;
+    for (const sx of [-1, 1]) {
+      // half toe: onderste deel van een bol = halfgesloten ooglid
+      const lid = new Mesh(new SphereGeometry(0.03, 18, 12, 0, Math.PI * 2, Math.PI * 0.42, Math.PI * 0.58), mats.black);
+      lid.scale.set(1.15, 0.9, 0.45);
+      lid.position.set(sx * 0.06, ey + 0.008, ez);
+      lid.rotation.z = sx * -0.12;
+      this.inner.add(lid);
+      this.eyes.lid.push(lid);
+      const white = new Mesh(new SphereGeometry(0.03, 18, 12), mats.white);
+      white.scale.z = 0.45;
+      white.position.set(sx * 0.06, ey, ez);
+      const pupil = new Mesh(new SphereGeometry(0.012, 12, 8), mats.black);
+      pupil.position.set(sx * 0.06, ey, ez + 0.013);
       this.pupils.push(pupil);
-      this.crosses.push(cross);
-      const brow = new Mesh(new BoxGeometry(0.1, 0.022, 0.02), mats.ironDark);
-      brow.position.set(sx * 0.105, 0.155, 0.215);
-      g.add(brow);
-      this.brows.push(brow);
-      const cheek = new Mesh(new SphereGeometry(0.035, 12, 8), mats.cheek);
-      cheek.scale.z = 0.3;
-      cheek.position.set(sx * 0.19, -0.07, 0.2);
-      g.add(cheek);
-      this.cheeks.push(cheek);
+      const wide = new Group();
+      wide.add(white, pupil);
+      this.inner.add(wide);
+      this.eyes.wide.push(wide);
+      const line = new Mesh(new BoxGeometry(0.05, 0.007, 0.01), mats.black);
+      line.position.set(sx * 0.06, ey, ez + 0.004);
+      this.inner.add(line);
+      this.eyes.line.push(line);
     }
-    const smile = new Mesh(new TorusGeometry(0.075, 0.016, 8, 24, Math.PI), mats.mouth);
-    smile.rotation.z = Math.PI;
-    const grin = new Mesh(new TorusGeometry(0.1, 0.024, 8, 24, Math.PI), mats.mouth);
-    grin.rotation.z = Math.PI;
-    const frown = new Mesh(new TorusGeometry(0.07, 0.016, 8, 24, Math.PI), mats.mouth);
-    frown.position.y = -0.04;
-    const o = new Mesh(new TorusGeometry(0.035, 0.016, 8, 20), mats.mouth);
-    const flat = new Mesh(new BoxGeometry(0.11, 0.02, 0.02), mats.mouth);
-    for (const [k, m] of Object.entries({ smile, grin, frown, o, flat })) {
-      m.position.set(0, (m.position.y || 0) - 0.08, 0.235);
-      g.add(m);
-      this.mouths[k] = m;
+    // zonnebril
+    const shades = new Group();
+    for (const sx of [-1, 1]) {
+      const lens = new Mesh(new RoundedBoxGeometry(0.075, 0.04, 0.012, 2, 0.008), mats.black);
+      lens.position.set(sx * 0.055, ey, ez + 0.012);
+      shades.add(lens);
     }
-    this.apply();
+    const bridge = new Mesh(new BoxGeometry(0.2, 0.008, 0.01), mats.black);
+    bridge.position.set(0, ey + 0.014, ez + 0.01);
+    shades.add(bridge);
+    this.inner.add(shades);
+    this.eyes.shades.push(shades);
+    this.mouth = new Mesh(new BoxGeometry(0.022, 0.005, 0.008), mats.black);
+    this.mouth.position.set(0, NOODLE_H * 0.645, Math.sqrt(r * r) - 0.002);
+    this.mouthO = new Mesh(new TorusGeometry(0.008, 0.0035, 6, 14), mats.black);
+    this.mouthO.position.copy(this.mouth.position);
+    this.inner.add(this.mouth, this.mouthO);
+    this.glow = new Mesh(new PlaneGeometry(0.7, 0.7), mats.lime);
+    this.glow.rotation.x = -Math.PI / 2;
+    this.glow.position.y = 0.01;
+    const shadow = new Mesh(new PlaneGeometry(0.55, 0.3), mats.blob);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.004;
+    this.group.add(shadow, this.glow, this.inner);
+    this.group.position.copy(NOODLE_POS);
+    this.group.rotation.y = -0.35;
+    this.setMood('idle');
+  }
+
+  private eyeMode(m: EyeMode) {
+    for (const [k, list] of Object.entries(this.eyes)) list.forEach((o) => (o.visible = k === m));
+    this.mouthO.visible = m === 'wide';
+    this.mouth.visible = m !== 'wide';
   }
 
   setMood(m: Mood) {
     this.mood = m;
-    this.apply();
+    this.sqT = 0;
+    this.tilt = 0;
+    this.glowT = 0;
+    switch (m) {
+      case 'surprised':
+        this.eyeMode('wide');
+        this.sqV += 3;
+        break;
+      case 'angry':
+        this.eyeMode('wide');
+        this.sqT = 0.18;
+        break;
+      case 'dead':
+        this.eyeMode('line');
+        this.sqT = -0.36;
+        this.sqV -= 3;
+        break;
+      case 'strain':
+        this.eyeMode('line');
+        this.sqT = -0.12;
+        break;
+      case 'happy':
+        this.eyeMode('lid');
+        this.glowT = 0.9;
+        this.hopV = 2.6;
+        break;
+      case 'cool':
+        this.eyeMode('shades');
+        this.glowT = 1;
+        this.hopV = 3;
+        this.tilt = 0.1;
+        break;
+      case 'smug':
+        this.eyeMode('lid');
+        this.tilt = 0.12;
+        break;
+      case 'meh':
+        this.eyeMode('lid');
+        this.tilt = -0.08;
+        break;
+      default:
+        this.eyeMode('lid');
+    }
   }
 
-  private apply() {
-    const m = this.mood;
-    const mouth = { idle: 'smile', focus: 'flat', strain: 'frown', surprised: 'o', happy: 'grin', meh: 'flat', angry: 'frown', dead: 'o', smug: 'smile' }[m];
-    for (const [k, mesh] of Object.entries(this.mouths)) mesh.visible = k === mouth;
-    const dead = m === 'dead';
-    this.pupils.forEach((p) => (p.visible = !dead));
-    this.crosses.forEach((c) => (c.visible = dead));
-    const browTilt = { angry: 0.45, strain: -0.3, surprised: 0, happy: -0.15, focus: 0.2, meh: 0.1, idle: 0, dead: 0, smug: 0.25 }[m];
-    const browY = { surprised: 0.19, happy: 0.17, angry: 0.14, strain: 0.165, focus: 0.145, meh: 0.15, idle: 0.155, dead: 0.17, smug: 0.15 }[m];
-    this.brows.forEach((b, i) => {
-      const sx = i === 0 ? -1 : 1;
-      b.rotation.z = -sx * browTilt;
-      b.position.y = browY;
-    });
-    const blush = m === 'happy' || m === 'strain' || m === 'smug' ? 0.55 : 0;
-    this.cheeks.forEach((c) => ((c.material as MeshBasicMaterial).opacity = blush));
+  jolt(s: number) {
+    this.sqV -= 2.4 * s;
   }
 
-  /** Eén tijdstap: pupillen op een veer, hoofd dat stuitert. */
+  hopOnce(v = 2.4) {
+    if (this.hop === 0) this.hopV = v;
+  }
+
+  /** Kijk (lichaam draait mee) naar een punt in de wereld. */
+  look(world: Vector3 | null) {
+    if (!world) this.turnT = -0.35;
+    else this.turnT = Math.max(-0.9, Math.min(0.5, Math.atan2(world.x - NOODLE_POS.x, 2.5) * 1.2 - 0.2));
+  }
+
   step(dt: number) {
-    const k = 260;
-    const c = 9;
-    const ax = -k * (this.pupil.x - this.look.x) - c * this.pupilV.x;
-    const ay = -k * (this.pupil.y - this.look.y) - c * this.pupilV.y;
-    this.pupilV.x += ax * dt;
-    this.pupilV.y += ay * dt;
-    this.pupil.x += this.pupilV.x * dt;
-    this.pupil.y += this.pupilV.y * dt;
-    const len = this.pupil.length();
-    if (len > 1) this.pupil.multiplyScalar(1 / len);
-    this.bobV += (-420 * this.bob - 11 * this.bobV) * dt;
-    this.bob += this.bobV * dt;
-    this.wobV += (-160 * this.wob - 6 * this.wobV) * dt;
-    this.wob += this.wobV * dt;
+    this.sqV += (-110 * (this.sq - this.sqT) - 9 * this.sqV) * dt;
+    this.sq += this.sqV * dt;
+    if (this.hop > 0 || this.hopV > 0) {
+      this.hopV -= 14 * dt;
+      this.hop += this.hopV * dt;
+      if (this.hop <= 0) {
+        this.hop = 0;
+        if (this.hopV < -0.8) this.sqV -= Math.min(4, -this.hopV * 1.2);
+        this.hopV = 0;
+      }
+    }
+    this.turn += (this.turnT - this.turn) * Math.min(1, dt * 6);
     if (this.blinkT > 0) this.blinkT = Math.max(0, this.blinkT - dt);
-  }
-
-  jolt(strength: number) {
-    this.bobV -= 4 * strength;
-    this.wobV += (Math.random() - 0.5) * 6 * strength;
-    this.pupilV.x += (Math.random() - 0.5) * 30 * strength;
-    this.pupilV.y += 20 * strength;
+    const op = (this.mats.lime.opacity += (this.glowT * (this.hop > 0 ? 1 : 0.55) - this.mats.lime.opacity) * Math.min(1, dt * 5));
+    this.glow.visible = op > 0.01;
   }
 
   sync() {
-    this.pupils.forEach((p, i) => {
-      p.position.x = this.pupil.x * 0.042 + (i === 0 ? 0.004 : -0.004);
-      p.position.y = this.pupil.y * 0.042;
-    });
+    const s = Math.max(-0.45, Math.min(0.45, this.sq));
+    this.inner.scale.set(1 - s * 0.5, 1 + s, 1 - s * 0.5);
+    this.inner.position.y = this.hop;
+    this.inner.rotation.z = this.tilt;
+    this.group.rotation.y = this.turn;
     const blink = this.blinkT > 0 ? Math.abs(Math.sin((this.blinkT / 0.14) * Math.PI)) : 0;
-    this.eyes.forEach((e) => (e.scale.y = 1 - blink * 0.9));
-    this.group.scale.set(1 - this.bob * 0.6, 1 + this.bob, 1 - this.bob * 0.6);
-    this.group.rotation.z = this.wob * 0.25;
+    for (const e of [...this.eyes.lid, ...this.eyes.wide]) e.scale.y = (e === this.eyes.wide[0] || e === this.eyes.wide[1] ? 1 : 0.9) * (1 - blink * 0.9);
   }
 
   settled() {
-    return Math.abs(this.bob) < 1e-3 && Math.abs(this.bobV) < 1e-2 && Math.abs(this.wob) < 1e-3 && Math.abs(this.wobV) < 1e-2 && this.pupilV.length() < 1e-2 && this.pupil.distanceTo(this.look) < 1e-3 && this.blinkT === 0;
+    return Math.abs(this.sq - this.sqT) < 1e-3 && Math.abs(this.sqV) < 1e-2 && this.hop === 0 && this.hopV === 0 && Math.abs(this.turn - this.turnT) < 1e-3 && this.blinkT === 0 && Math.abs(this.mats.lime.opacity - this.glowT * 0.55) < 0.01;
+  }
+
+  /** Bovenkant van het hoofd (wereldcoördinaten). */
+  headWorld(): Vector3 {
+    return new Vector3(NOODLE_POS.x, NOODLE_H * (1 + this.sq) + this.hop + 0.04, NOODLE_POS.z);
   }
 }
 
@@ -550,11 +658,10 @@ export class ScaleView3D implements ScaleLike {
   private camBase = new Vector3();
   private lookAtPt = new Vector3(0, 1.4, 0);
 
-  // scene-onderdelen
   private beam = new Group();
   private panGroups: [Group, Group] = [new Group(), new Group()];
   private panInner: [Group, Group] = [new Group(), new Group()];
-  private chains: [Group, Group] = [new Group(), new Group()];
+  private cables: [Group, Group] = [new Group(), new Group()];
   private needle = new Group();
   private lock = new Group();
   private shackle!: Mesh;
@@ -564,10 +671,11 @@ export class ScaleView3D implements ScaleLike {
   private objectMesh: Mesh | null = null;
   private objectDrop: Drop | null = null;
   private objectToken = 0;
-  private face: Face;
+  private noodle: Noodle;
   private puffs: Puff[] = [];
   private puffMat: SpriteMaterial;
   private blinkTimer = 0;
+  private hopTimers: number[] = [];
   private lookTarget: Vector3 | null = null;
   private lookUntil = 0;
 
@@ -590,34 +698,34 @@ export class ScaleView3D implements ScaleLike {
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.1;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
 
     const pmrem = new PMREMGenerator(this.renderer);
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
     pmrem.dispose();
-    this.scene.environmentIntensity = 0.9;
+    this.scene.environmentIntensity = 1.0;
 
-    this.face = new Face(this.mats);
+    this.noodle = new Noodle(this.mats);
     this.puffMat = new SpriteMaterial({ map: puffTexture(), transparent: true, depthWrite: false });
     this.buildScene();
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(canvas);
     this.resize();
-    // af en toe knipperen
     const blink = () => {
-      this.blinkTimer = window.setTimeout(blink, 2200 + Math.random() * 3500);
-      if (this.face.mood === 'dead') return;
-      this.face.blinkT = 0.14;
+      this.blinkTimer = window.setTimeout(blink, 2600 + Math.random() * 3500);
+      if (this.noodle.mood === 'dead' || this.noodle.mood === 'cool') return;
+      this.noodle.blinkT = 0.14;
       this.wake();
     };
-    this.blinkTimer = window.setTimeout(blink, 1800);
+    this.blinkTimer = window.setTimeout(blink, 2000);
   }
 
   destroy() {
     cancelAnimationFrame(this.raf);
     clearTimeout(this.blinkTimer);
+    this.hopTimers.forEach(clearTimeout);
     this.ro.disconnect();
     this.scene.traverse((o) => {
       const m = o as Mesh;
@@ -644,159 +752,179 @@ export class ScaleView3D implements ScaleLike {
   private buildScene() {
     const { mats, scene } = this;
 
-    scene.add(new HemisphereLight(0xfff3dc, 0x1a140c, 0.6));
-    const key = new DirectionalLight(0xfff1d6, 2.2);
-    key.position.set(2.5, 6, 4);
+    scene.add(new HemisphereLight(0xe8e0ff, 0x120c22, 0.5));
+    const key = new DirectionalLight(0xffffff, 2.4);
+    key.position.set(-3, 6, 4);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     Object.assign(key.shadow.camera, { left: -3.5, right: 3.5, top: 4, bottom: -1, near: 1, far: 14 });
     key.shadow.bias = -0.0004;
-    key.shadow.radius = 4;
+    key.shadow.radius = 5;
     scene.add(key);
-    const rim = new DirectionalLight(0xffd59a, 1.1);
-    rim.position.set(-4, 3, -3);
-    scene.add(rim);
+    const rimL = new DirectionalLight(0xb79cff, 2.2);
+    rimL.position.set(-5, 2.5, -3);
+    const rimR = new DirectionalLight(0x7ee8e2, 1.6);
+    rimR.position.set(5, 2, -2);
+    scene.add(rimL, rimR);
 
-    const ground = new Mesh(new PlaneGeometry(3.6, 1.8), mats.blob);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0.002;
-    scene.add(ground);
+    // paarse vloergloed + contactschaduw
+    const floor = new Mesh(new PlaneGeometry(8, 4.5), mats.floor);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0.001;
+    const shadow = new Mesh(new PlaneGeometry(3.4, 1.6), mats.blob);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.002;
+    scene.add(floor, shadow);
 
-    // sokkel
-    const base = this.shadowed(new Mesh(new RoundedBoxGeometry(2.3, 0.24, 0.95, 4, 0.06), mats.wood));
-    base.position.y = 0.12;
-    scene.add(base);
-    const foot = this.shadowed(new Mesh(new CylinderGeometry(0.3, 0.34, 0.07, 40), mats.brass));
-    foot.position.y = 0.275;
-    const foot2 = this.shadowed(new Mesh(new CylinderGeometry(0.16, 0.22, 0.08, 32), mats.brass));
-    foot2.position.y = 0.345;
-    scene.add(foot, foot2);
-
-    // zuil
-    const colH = PIVOT_Y - 0.38;
-    const col = this.shadowed(new Mesh(new CylinderGeometry(0.055, 0.085, colH, 24), mats.iron));
-    col.position.y = 0.38 + colH / 2;
-    scene.add(col);
-    for (const y of [0.55, PIVOT_Y - 0.22]) {
-      const ring = this.shadowed(new Mesh(new TorusGeometry(0.075, 0.018, 10, 32), mats.brass));
-      ring.rotation.x = Math.PI / 2;
-      ring.position.y = y;
-      scene.add(ring);
+    // sokkel: zwart titanium met aqua lichtrand
+    const pw = 2.7;
+    const pd = 1.0;
+    const ph = 0.16;
+    const plinth = this.shadowed(new Mesh(new RoundedBoxGeometry(pw, ph, pd, 4, 0.03), mats.titanium));
+    plinth.position.y = ph / 2;
+    scene.add(plinth);
+    const edge = 0.012;
+    const inset = 0.035;
+    for (const [w, d, x, z] of [
+      [pw - 2 * inset, edge, 0, pd / 2 - inset],
+      [pw - 2 * inset, edge, 0, -pd / 2 + inset],
+      [edge, pd - 2 * inset, pw / 2 - inset, 0],
+      [edge, pd - 2 * inset, -pw / 2 + inset, 0],
+    ]) {
+      const line = new Mesh(new BoxGeometry(w, 0.004, d), mats.aqua);
+      line.position.set(x, ph + 0.002, z);
+      scene.add(line);
     }
-    const fork = this.shadowed(new Mesh(new BoxGeometry(0.2, 0.16, 0.16), mats.darkBrass));
+    const front = new Mesh(new BoxGeometry(pw - 0.1, 0.006, 0.004), mats.aqua);
+    front.position.set(0, ph - 0.012, pd / 2 + 0.001);
+    scene.add(front);
+
+    // kolom: chroom met kraag en stelknop
+    const colH = PIVOT_Y - ph - 0.08;
+    const col = this.shadowed(new Mesh(new CylinderGeometry(0.038, 0.042, colH, 32), mats.chrome));
+    col.position.y = ph + colH / 2;
+    const foot = this.shadowed(new Mesh(new CylinderGeometry(0.1, 0.12, 0.03, 40), mats.chrome));
+    foot.position.y = ph + 0.015;
+    const collar = this.shadowed(new Mesh(new CylinderGeometry(0.06, 0.06, 0.05, 32), mats.chrome));
+    collar.position.y = PIVOT_Y - 0.2;
+    const rod = this.shadowed(new Mesh(new CylinderGeometry(0.012, 0.012, 0.28, 12), mats.chrome));
+    rod.rotation.z = Math.PI / 2;
+    rod.position.y = PIVOT_Y - 0.2;
+    scene.add(col, foot, collar, rod);
+    for (const sx of [-1, 1]) {
+      const knob = this.shadowed(new Mesh(new CylinderGeometry(0.026, 0.026, 0.035, 20), mats.titanium));
+      knob.rotation.z = Math.PI / 2;
+      knob.position.set(sx * 0.15, PIVOT_Y - 0.2, 0);
+      scene.add(knob);
+    }
+    const fork = this.shadowed(new Mesh(new BoxGeometry(0.1, 0.12, 0.08), mats.chrome));
     fork.position.y = PIVOT_Y - 0.08;
     scene.add(fork);
 
-    // wijzerplaat
-    const span = 26 * DEG;
-    const dial = new Mesh(new RingGeometry(NEEDLE - 0.2, NEEDLE + 0.06, 48, 1, -Math.PI / 2 - span, span * 2), mats.dial);
-    dial.position.set(0, PIVOT_Y, 0.13);
-    scene.add(dial);
-    const rimRing = new Mesh(new RingGeometry(NEEDLE + 0.06, NEEDLE + 0.085, 48, 1, -Math.PI / 2 - span, span * 2), mats.brass);
-    rimRing.position.copy(dial.position);
-    scene.add(rimRing);
-    const ticks = new InstancedMesh(new BoxGeometry(0.008, 1, 0.004), mats.tick, 23);
-    const mtx = new Matrix4();
-    let n = 0;
-    for (let d = -22; d <= 22; d += 2) {
-      const a = -Math.PI / 2 + d * DEG;
-      const len = d === 0 ? 0.13 : d % 10 === 0 ? 0.09 : 0.05;
-      const r = NEEDLE + 0.03 - len / 2;
-      mtx.compose(
-        new Vector3(Math.cos(a) * r, PIVOT_Y + Math.sin(a) * r, 0.135),
-        new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), a + Math.PI / 2),
-        new Vector3(d === 0 ? 2.2 : 1, len, 1),
-      );
-      ticks.setMatrixAt(n++, mtx);
+    // neon-wijzerplaat boven het draaipunt (kleurverloop aqua → lila → roze)
+    const arc = new TorusGeometry(DIAL_R, 0.011, 10, 96, Math.PI);
+    const ap = arc.attributes.position;
+    const ac = new Float32Array(ap.count * 3);
+    const cA = new Color(0x7ee8e2);
+    const cB = new Color(0xb79cff);
+    const cC = new Color(0xff5fd8);
+    const tc = new Color();
+    for (let i = 0; i < ap.count; i++) {
+      const t = (1 - ap.getX(i) / DIAL_R) / 2; // links aqua → rechts roze
+      if (t < 0.5) tc.copy(cA).lerp(cB, t * 2);
+      else tc.copy(cB).lerp(cC, (t - 0.5) * 2);
+      ac.set([tc.r, tc.g, tc.b], i * 3);
     }
-    scene.add(ticks);
-
-    // wijzer
-    const nBody = new Mesh(new BoxGeometry(0.018, NEEDLE, 0.012), mats.ironDark);
-    nBody.position.y = -NEEDLE / 2;
-    const nTip = new Mesh(new CylinderGeometry(0, 0.022, 0.14, 4), mats.red);
-    nTip.rotation.z = Math.PI;
-    nTip.position.y = -NEEDLE + 0.02;
-    this.needle.add(nBody, nTip);
-    this.needle.position.set(0, PIVOT_Y, 0.16);
+    arc.setAttribute('color', new BufferAttribute(ac, 3));
+    const dial = new Mesh(arc, new MeshBasicMaterial({ vertexColors: true, toneMapped: false }));
+    dial.position.set(0, PIVOT_Y, 0.05);
+    const halo = new Mesh(new TorusGeometry(DIAL_R, 0.04, 8, 96, Math.PI), new MeshBasicMaterial({ color: 0xb79cff, transparent: true, opacity: 0.12, blending: AdditiveBlending, depthWrite: false, toneMapped: false }));
+    halo.position.copy(dial.position);
+    scene.add(dial, halo);
+    for (let d = 0; d <= 36; d++) {
+      const a = Math.PI * (d / 36);
+      const long = d % 6 === 0;
+      const len = long ? 0.06 : 0.032;
+      const t = new Mesh(new BoxGeometry(0.006, len, 0.004), mats.tick);
+      const rr = DIAL_R - 0.03 - len / 2;
+      t.position.set(Math.cos(a) * rr, PIVOT_Y + Math.sin(a) * rr, 0.05);
+      t.rotation.z = a - Math.PI / 2;
+      scene.add(t);
+    }
+    const nBody = new Mesh(new BoxGeometry(0.012, DIAL_R - 0.06, 0.008), mats.pink);
+    nBody.position.y = (DIAL_R - 0.06) / 2;
+    this.needle.add(nBody);
+    this.needle.position.set(0, PIVOT_Y, 0.075);
     scene.add(this.needle);
 
-    // balk
+    // balk: dun, spiegelend chroom, iriserende parels
     for (const s of [-1, 1]) {
-      const half = this.shadowed(new Mesh(new CylinderGeometry(0.028, 0.06, R, 24), mats.brass));
+      const half = this.shadowed(new Mesh(new CylinderGeometry(0.012, 0.032, R, 24), mats.chrome));
       half.rotation.z = (s * Math.PI) / 2;
       half.position.x = (s * R) / 2;
       this.beam.add(half);
-      const cap = this.shadowed(new Mesh(new SphereGeometry(0.055, 20, 14), mats.brass));
+      const cap = this.shadowed(new Mesh(new SphereGeometry(0.05, 28, 20), mats.irid));
       cap.position.x = s * R;
       this.beam.add(cap);
-      const hang = this.shadowed(new Mesh(new TorusGeometry(0.035, 0.01, 8, 16), mats.darkBrass));
-      hang.position.set(s * R, -0.06, 0);
-      this.beam.add(hang);
     }
-    const boss = this.shadowed(new Mesh(new CylinderGeometry(0.13, 0.13, 0.12, 36), mats.brass));
-    boss.rotation.x = Math.PI / 2;
-    const pin = new Mesh(new CylinderGeometry(0.04, 0.04, 0.2, 16), mats.ironDark);
-    pin.rotation.x = Math.PI / 2;
-    this.beam.add(boss, pin);
+    const pivot = this.shadowed(new Mesh(new CylinderGeometry(0.1, 0.1, 0.05, 48), mats.irid));
+    pivot.rotation.x = Math.PI / 2;
+    pivot.position.z = 0.03;
+    const pivotRing = new Mesh(new TorusGeometry(0.1, 0.012, 10, 48), mats.chrome);
+    pivotRing.position.z = 0.056;
+    this.beam.add(pivot, pivotRing);
     this.beam.position.y = PIVOT_Y;
     scene.add(this.beam);
 
-    // hoofd op een korte nek
-    const neck = this.shadowed(new Mesh(new CylinderGeometry(0.05, 0.07, 0.2, 16), mats.darkBrass));
-    neck.position.y = PIVOT_Y + 0.12;
-    scene.add(neck);
-    this.face.group.position.set(0, HEAD_Y, 0.02);
-    scene.add(this.face.group);
-
-    // schalen
+    // schalen: rookglas met chromen rand, drie dunne kabels
     const profile = [
-      [0, -0.07], [0.3, -0.065], [0.48, -0.045], [0.58, -0.015], [PAN_R, 0.012], [PAN_R + 0.012, 0.02],
-      [PAN_R - 0.004, 0.022], [0.57, -0.006], [0.47, -0.035], [0.3, -0.053], [0, -0.058],
+      [0, -0.055], [0.25, -0.05], [0.42, -0.035], [0.54, -0.012], [PAN_R, 0.008], [PAN_R - 0.01, 0.012], [0.53, -0.006], [0.41, -0.028], [0.25, -0.042], [0, -0.047],
     ].map(([x, y]) => new Vector2(x, y));
-    const linkGeo = new TorusGeometry(0.022, 0.0055, 6, 12);
     for (const side of [0, 1] as const) {
-      const dish = this.shadowed(new Mesh(new LatheGeometry(profile, 56), side === 1 ? mats.brassRight : mats.brass));
-      this.panInner[side].add(dish);
-      const anchors = [0, 180, 270].map((a) => new Vector3(Math.cos(a * DEG) * (PAN_R - 0.02), 0, Math.sin(a * DEG) * (PAN_R - 0.02)));
+      const dish = this.shadowed(new Mesh(new LatheGeometry(profile, 64), side === 1 ? mats.glassRight : mats.glass));
+      const rim = this.shadowed(new Mesh(new TorusGeometry(PAN_R, 0.011, 10, 64), mats.chrome));
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.008;
+      const glint = new Mesh(new TorusGeometry(PAN_R * 0.62, 0.004, 6, 48, Math.PI * 0.5), mats.aqua);
+      glint.rotation.x = Math.PI / 2;
+      glint.rotation.z = 0.3;
+      glint.position.y = -0.04;
+      this.panInner[side].add(dish, rim, glint);
       const top = new Vector3(0, L, 0);
-      const perChain = Math.ceil(top.distanceTo(anchors[0]) / 0.036);
-      const links = new InstancedMesh(linkGeo, mats.brass, perChain * 3);
-      links.castShadow = true;
-      let li = 0;
-      for (const a of anchors) {
-        const dir = new Vector3().subVectors(top, a);
+      for (const a of [0, 180, 270]) {
+        const p = new Vector3(Math.cos(a * DEG) * (PAN_R - 0.02), 0.01, Math.sin(a * DEG) * (PAN_R - 0.02));
+        const dir = new Vector3().subVectors(top, p);
         const len = dir.length();
-        dir.normalize();
-        const q0 = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), dir);
-        for (let k = 0; k < perChain; k++) {
-          const p = a.clone().addScaledVector(dir, ((k + 0.5) / perChain) * len);
-          const q = q0.clone().multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), ((k % 2) * Math.PI) / 2));
-          mtx.compose(p, q, new Vector3(0.75, 1.3, 1));
-          links.setMatrixAt(li++, mtx);
-        }
+        const cab = new Mesh(new CylinderGeometry(0.0035, 0.0035, len, 6), mats.chrome);
+        cab.position.copy(p).addScaledVector(dir, 0.5);
+        cab.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), dir.normalize());
+        this.cables[side].add(cab);
       }
-      this.chains[side].add(links);
-      this.panInner[side].add(this.chains[side]);
+      const hook = new Mesh(new SphereGeometry(0.018, 12, 10), mats.chrome);
+      hook.position.y = L;
+      this.cables[side].add(hook);
+      this.panInner[side].add(this.cables[side]);
       this.panGroups[side].add(this.panInner[side]);
       scene.add(this.panGroups[side]);
     }
-    this.stack.position.y = -0.05;
+    this.stack.position.y = -0.04;
     this.stack.add(this.tags);
     this.panInner[1].add(this.stack);
-    this.objectHolder.position.y = -0.05;
+    this.objectHolder.position.y = -0.04;
     this.panInner[0].add(this.objectHolder);
 
-    // slot
-    const body = new Mesh(new RoundedBoxGeometry(0.17, 0.14, 0.07, 3, 0.025), mats.lockBrass);
-    this.shackle = new Mesh(new TorusGeometry(0.05, 0.014, 10, 24, Math.PI), mats.lockSteel);
-    this.shackle.position.y = 0.07;
-    const hole = new Mesh(new CylinderGeometry(0.014, 0.014, 0.01, 12), mats.ironDark);
+    // slot (verdwijnt bij het wegen)
+    const body = new Mesh(new RoundedBoxGeometry(0.14, 0.11, 0.05, 3, 0.02), mats.lockBody);
+    this.shackle = new Mesh(new TorusGeometry(0.04, 0.011, 10, 24, Math.PI), mats.lockShackle);
+    this.shackle.position.y = 0.055;
+    const hole = new Mesh(new CylinderGeometry(0.011, 0.011, 0.01, 12), mats.ironDark);
     hole.rotation.x = Math.PI / 2;
-    hole.position.set(0, -0.005, 0.036);
+    hole.position.set(0, -0.005, 0.026);
     this.lock.add(body, this.shackle, hole);
-    this.lock.position.set(0, PIVOT_Y - 0.2, 0.2);
+    this.lock.position.set(0, PIVOT_Y - 0.32, 0.1);
     scene.add(this.lock);
+
+    scene.add(this.noodle.group);
   }
 
   resize() {
@@ -806,15 +934,14 @@ export class ScaleView3D implements ScaleLike {
     this.renderer.setSize(w, h, false);
     const aspect = w / h;
     this.camera.aspect = aspect;
-    // kader: breedte ±2,15 m, hoogte 0–3 m (hoofd inbegrepen)
     const vfov = this.camera.fov * DEG;
     const needH = 2.95;
-    const needW = 4.3;
+    const needW = 4.45;
     const distH = needH / 2 / Math.tan(vfov / 2);
     const distW = needW / 2 / (Math.tan(vfov / 2) * aspect);
-    const dist = Math.max(distH, distW) + 0.25;
-    this.lookAtPt.set(0, 1.45, 0);
-    this.camBase.set(0, 1.45 + dist * 0.2, dist);
+    const dist = Math.max(distH, distW) + 0.2;
+    this.lookAtPt.set(0.08, 1.38, 0);
+    this.camBase.set(0.08, 1.38 + dist * 0.16, dist);
     this.camera.position.copy(this.camBase);
     this.camera.lookAt(this.lookAtPt);
     this.camera.updateProjectionMatrix();
@@ -836,20 +963,20 @@ export class ScaleView3D implements ScaleLike {
     }
     this.objectHolder.clear();
     if (!obj) return this.wake();
-    const place = (tex: Texture, aspect: number) => {
+    const place = (tex: Texture, aspect: number, card: boolean) => {
       if (token !== this.objectToken) return tex.dispose();
       tex.colorSpace = SRGBColorSpace;
       tex.anisotropy = 4;
-      let hh = 1.0;
+      let hh = card ? 0.95 : 1.0;
       let ww = hh * aspect;
-      if (ww > 1.35) {
-        ww = 1.35;
+      if (ww > 1.3) {
+        ww = 1.3;
         hh = ww / aspect;
       }
       const geo = new PlaneGeometry(ww, hh);
       geo.translate(0, hh / 2, 0);
-      const mesh = new Mesh(geo, new MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.02, toneMapped: false }));
-      mesh.castShadow = true;
+      const mesh = new Mesh(geo, new MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.02, toneMapped: false, side: DoubleSide }));
+      mesh.castShadow = !card;
       mesh.rotation.x = -Math.atan2(this.camBase.y - PIVOT_Y + L, this.camBase.z) * 0.6;
       const blob = new Mesh(new PlaneGeometry(Math.min(ww * 0.9, PAN_R * 1.6), Math.min(ww * 0.5, 0.5)), this.mats.blob);
       blob.rotation.x = -Math.PI / 2;
@@ -858,21 +985,16 @@ export class ScaleView3D implements ScaleLike {
       this.objectMesh = mesh;
       this.objectDrop = drop && !this.reduced ? { dy: 3.4, vy: 0, dx: 0, landed: false, bounces: 0 } : null;
       if (!this.objectDrop) this.cb.onLand?.('object', -1, 0.5);
-      // de balans kijkt naar wat er binnenvalt
       this.glance(new Vector3(-R, PIVOT_Y - L + 0.6, 0), 1400);
+      this.noodle.setMood('surprised');
+      this.hopTimers.push(window.setTimeout(() => this.noodle.mood === 'surprised' && this.setMood('idle'), 1200));
       this.sync();
       this.wake();
     };
+    const card = () => place(hologramTexture(obj.title ?? '???', obj.sub ?? 'Mystery', obj.emoji), 512 / 640, true);
     if (obj.image) {
-      this.loader.load(
-        obj.image,
-        (tex) => place(tex, (tex.image as HTMLImageElement).width / (tex.image as HTMLImageElement).height),
-        undefined,
-        () => place(emojiTexture(obj.emoji), 1),
-      );
-    } else {
-      place(emojiTexture(obj.emoji), 1);
-    }
+      this.loader.load(obj.image, (tex) => place(tex, (tex.image as HTMLImageElement).width / (tex.image as HTMLImageElement).height, false), undefined, card);
+    } else card();
   }
 
   reset() {
@@ -883,6 +1005,7 @@ export class ScaleView3D implements ScaleLike {
     this.phys.locked = true;
     this.phys.target = 0;
     this.settledNotified = true;
+    this.hopTimers.forEach(clearTimeout);
     this.setMood('idle');
     this.wake();
   }
@@ -903,10 +1026,7 @@ export class ScaleView3D implements ScaleLike {
         it.drop.dy = Math.max(0.15, p ? p.y - (slot.y + slot.h / 2) : 0.8);
         it.drop.dx = p ? Math.max(-1, Math.min(1, p.x - slot.x)) : 0;
       } else it.drop.dy = 0.85 + WEIGHT_SPECS[idx].heft * 0.6;
-    } else if (!slot) {
-      // verborgen in een stapel: enkel het ×N-label verandert
-      this.land(idx, 0.3);
-    } else this.land(idx, 0.4);
+    } else this.land(idx, slot ? 0.4 : 0.3);
     this.glance(new Vector3(R, PIVOT_Y - L + 0.3, 0), 900);
     this.wake();
     return id;
@@ -935,7 +1055,7 @@ export class ScaleView3D implements ScaleLike {
     this.slots = [];
     this.tags.clear();
     this.phys.pans[1].vb -= 0.25 * L;
-    this.face.jolt(0.6);
+    this.noodle.hopOnce(1.6);
     this.wake();
   }
 
@@ -945,7 +1065,6 @@ export class ScaleView3D implements ScaleLike {
     this.phys.target = -tiltDeg * DEG;
     this.settledNotified = false;
     this.setMood('surprised');
-    this.face.jolt(0.8);
     this.wake();
   }
 
@@ -961,11 +1080,15 @@ export class ScaleView3D implements ScaleLike {
   }
 
   setMood(m: Mood) {
-    this.face.setMood(m);
+    this.hopTimers.forEach(clearTimeout);
+    this.hopTimers = [];
+    this.noodle.setMood(m);
+    if (m === 'happy' || m === 'cool') {
+      for (let k = 1; k <= 3; k++) this.hopTimers.push(window.setTimeout(() => (this.noodle.hopOnce(m === 'cool' ? 3 : 2.4), this.wake()), k * 650));
+    }
     this.wake();
   }
 
-  /** Ogen volgen een punt op het scherm (bv. je vinger tijdens het slepen). */
   lookAtScreen(clientX: number, clientY: number) {
     this.setRay(clientX, clientY);
     const p = new Vector3();
@@ -981,7 +1104,6 @@ export class ScaleView3D implements ScaleLike {
       const it = this.items.find((x) => x.obj === o);
       if (it) return it.id;
       if (o === this.tags) {
-        // ×N-label: haal een exemplaar van die soort weg
         const idx = (h.object as Sprite).userData.idx as number;
         const last = [...this.items].reverse().find((x) => x.idx === idx);
         if (last) return last.id;
@@ -990,12 +1112,12 @@ export class ScaleView3D implements ScaleLike {
     return null;
   }
 
-  /** Tik op het hoofd of het voorwerp: geeft terug wat er geraakt werd. */
   poke(clientX: number, clientY: number): 'head' | 'object' | null {
     this.setRay(clientX, clientY);
-    if (this.raycaster.intersectObject(this.face.group, true).length) {
-      this.face.jolt(1.2);
-      this.face.blinkT = 0.14;
+    if (this.raycaster.intersectObject(this.noodle.group, true).length) {
+      this.noodle.jolt(1.2);
+      this.noodle.hopOnce(2);
+      this.noodle.blinkT = 0.14;
       this.wake();
       return 'head';
     }
@@ -1014,9 +1136,9 @@ export class ScaleView3D implements ScaleLike {
     return clientX >= r.left + r.width * 0.5 && clientX <= r.right + 20 && clientY >= r.top - 40 && clientY <= r.bottom + 10;
   }
 
-  /** Schermpositie (client-px) van de mond, voor een tekstballon. */
+  /** Schermpositie (client-px) boven Noodles hoofd, voor een tekstballon. */
   headScreenPos(): { x: number; y: number } {
-    const p = new Vector3(0, HEAD_Y + 0.27, 0).project(this.camera);
+    const p = this.noodle.headWorld().project(this.camera);
     const r = this.canvas.getBoundingClientRect();
     return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
   }
@@ -1081,7 +1203,6 @@ export class ScaleView3D implements ScaleLike {
         }
       }
     }
-    // ×N-labels naast elke volle stapel
     this.tags.clear();
     for (const [idx, list] of perKind) {
       if (list.length <= VISIBLE_PER_KIND) continue;
@@ -1106,14 +1227,14 @@ export class ScaleView3D implements ScaleLike {
   private land(idx: number, strength: number) {
     const heft = WEIGHT_SPECS[idx].heft;
     this.phys.impact(1, 0.35 + heft * 0.65, strength);
-    this.face.jolt(0.25 + heft * strength);
+    this.noodle.jolt(0.2 + heft * strength);
     if (!this.reduced && heft > 0.45) {
-      this.kickV -= heft * strength * 1.5;
+      this.kickV -= heft * strength * 1.4;
       this.puff(1, heft * strength);
     }
-    if (heft > 0.6 && this.face.mood === 'idle') {
-      this.face.setMood('strain');
-      window.setTimeout(() => this.face.mood === 'strain' && this.phys.locked && this.setMood('idle'), 1200);
+    if (heft > 0.6 && this.phys.locked && (this.noodle.mood === 'idle' || this.noodle.mood === 'strain')) {
+      this.noodle.setMood('strain');
+      this.hopTimers.push(window.setTimeout(() => this.noodle.mood === 'strain' && this.phys.locked && this.setMood('idle'), 1100));
     }
     this.cb.onLand?.('weight', idx, strength);
   }
@@ -1164,7 +1285,7 @@ export class ScaleView3D implements ScaleLike {
       const s = stepDrop(this.objectDrop, dt, GRAVITY, 7);
       if (s !== null) {
         this.phys.impact(0, 0.8, s);
-        this.face.jolt(0.6 * s);
+        this.noodle.jolt(0.5 * s);
         if (s > 0.5 && !this.reduced) this.puff(0, s * 0.6);
         this.cb.onLand?.('object', -1, s);
       }
@@ -1173,17 +1294,8 @@ export class ScaleView3D implements ScaleLike {
       const s = stepDrop(it.drop, dt, GRAVITY, 5);
       if (s !== null) this.land(it.idx, Math.max(0.15, s));
     }
-    // waar kijken de ogen naar?
-    let look = new Vector2(0, -0.15); // naar de speler
-    if (this.lookTarget && performance.now() < this.lookUntil) {
-      const d = this.lookTarget.clone().sub(new Vector3(0, HEAD_Y, 0));
-      look = new Vector2(d.x, d.y).normalize().multiplyScalar(Math.min(1, d.length() / 0.8));
-    } else if (!this.phys.locked) {
-      // na het wegen: kijk naar de kant die zakt
-      look = new Vector2(Math.sign(this.phys.target) * 0.8, -0.6);
-    }
-    this.face.look.copy(look);
-    this.face.step(dt);
+    this.noodle.look(this.lookTarget && performance.now() < this.lookUntil ? this.lookTarget : null);
+    this.noodle.step(dt);
     if (this.shakeT > 0) this.shakeT = Math.max(0, this.shakeT - dt);
     this.kickV += (-300 * this.kick - 18 * this.kickV) * dt;
     this.kick += this.kickV * dt;
@@ -1196,7 +1308,7 @@ export class ScaleView3D implements ScaleLike {
       p.vx *= 1 - 2.5 * dt;
       const k = 1 - p.life / 0.7;
       p.sprite.scale.setScalar(0.12 + k * 0.35);
-      (p.sprite.material as SpriteMaterial).opacity = Math.max(0, p.life / 0.7) * 0.8;
+      (p.sprite.material as SpriteMaterial).opacity = Math.max(0, p.life / 0.7) * 0.6;
       if (p.life <= 0) {
         this.scene.remove(p.sprite);
         (p.sprite.material as SpriteMaterial).dispose();
@@ -1214,12 +1326,11 @@ export class ScaleView3D implements ScaleLike {
     if (!this.phys.settled()) return false;
     if (this.objectDrop && !dropSettled(this.objectDrop)) return false;
     for (const it of this.items) if (!dropSettled(it.drop)) return false;
-    if (!this.face.settled() || this.puffs.length) return false;
+    if (!this.noodle.settled() || this.puffs.length) return false;
     if (this.lookTarget && performance.now() < this.lookUntil + 400) return false;
     return this.shakeT === 0 && Math.abs(this.kick) < 1e-3 && Math.abs(this.highlight - this.highlightTarget) < 0.01;
   }
 
-  /** Physics-toestand → scene graph. */
   private sync() {
     const p = this.phys;
     const th = -p.theta;
@@ -1227,34 +1338,33 @@ export class ScaleView3D implements ScaleLike {
     for (const side of [0, 1] as const) {
       const s = side === 0 ? -1 : 1;
       const g = this.panGroups[side];
-      g.position.set(s * R * Math.cos(th), PIVOT_Y - 0.06 + s * R * Math.sin(th), 0);
+      g.position.set(s * R * Math.cos(th), PIVOT_Y + s * R * Math.sin(th), 0);
       g.rotation.z = p.pans[side].phi;
       const stretch = L + p.pans[side].b * 0.6;
       this.panInner[side].position.y = -stretch;
-      this.chains[side].scale.y = stretch / L;
+      this.cables[side].scale.y = stretch / L;
     }
-    this.needle.rotation.z = th - p.needle;
+    // naald staat rechtop en slaat uit met de balk
+    this.needle.rotation.z = (th - p.needle) * 2.2;
     const la = p.lockAnim;
     this.lock.visible = la > 0.02;
-    this.lock.position.y = PIVOT_Y - 0.2 - (1 - la) * 0.35;
-    this.shackle.position.y = 0.07 + (1 - Math.min(1, la * 1.5)) * 0.05;
-    this.mats.lockBrass.opacity = this.mats.lockSteel.opacity = Math.min(1, la * 1.3);
+    this.lock.position.y = PIVOT_Y - 0.32 - (1 - la) * 0.35;
+    this.shackle.position.y = 0.055 + (1 - Math.min(1, la * 1.5)) * 0.04;
+    this.mats.lockBody.opacity = this.mats.lockShackle.opacity = Math.min(1, la * 1.3);
     for (const it of this.items) {
-      const s = this.slots.find((x) => x.id === it.id);
-      if (!s) continue;
-      it.obj.scale.setScalar(s.w / it.baseW);
-      it.obj.position.set(s.x + it.drop.dx, s.y + it.drop.dy, (((it.id * 7919) % 5) - 2) * 0.012);
+      const sl = this.slots.find((x) => x.id === it.id);
+      if (!sl) continue;
+      it.obj.scale.setScalar(sl.w / it.baseW);
+      it.obj.position.set(sl.x + it.drop.dx, sl.y + it.drop.dy, (((it.id * 7919) % 5) - 2) * 0.012);
     }
     if (this.objectMesh) {
       const d = this.objectDrop;
-      this.objectHolder.position.y = -0.05 + (d ? d.dy : 0);
+      this.objectHolder.position.y = -0.04 + (d ? d.dy : 0);
       const squash = d && !d.landed && d.dy < 0.03 && d.vy > 1 ? 0.88 : 1;
       this.objectMesh.scale.set(1 / squash, squash, 1);
     }
-    // het hoofd leunt een beetje tegen de kanteling in
-    this.face.sync();
-    this.face.group.rotation.z += -th * 0.35;
-    this.mats.brassRight.emissiveIntensity = this.highlight * 0.35;
+    this.noodle.sync();
+    this.mats.glassRight.emissiveIntensity = this.highlight * 0.5;
     this.camera.position.copy(this.camBase);
     this.camera.position.y += this.kick * 0.15;
     this.camera.position.z += this.kick * 0.25;
@@ -1267,7 +1377,6 @@ export class ScaleView3D implements ScaleLike {
   }
 }
 
-/** Rendert elk gewicht apart (zelfde materialen en licht) naar een PNG-data-URL. */
 export function renderWeightIcons(w = 184, h = 136): string[] {
   const canvas = document.createElement('canvas');
   const r = new WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });

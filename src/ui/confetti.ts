@@ -1,4 +1,4 @@
-const COLORS = ['#d4a72c', '#f3dc8a', '#c0392b', '#2e7d5b', '#3f6fb5', '#ffffff'];
+const COLORS = ['#7EE8E2', '#B79CFF', '#E25CF1', '#D7FF4A', '#8B5CF6', '#FFFFFF'];
 
 /** Lichte confetti-burst op een tijdelijk canvas. */
 export function confetti(originX = 0.5, originY = 0.35, count = 140) {

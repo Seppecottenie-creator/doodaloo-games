@@ -8,6 +8,10 @@ export interface GameObject {
   /** 1 = herkenbaar en alledaags … 5 = absurd of loodzwaar. */
   difficulty: 1 | 2 | 3 | 4 | 5;
   tags: string[];
+  /** getoond als label naast REAL/FICTIONAL, bv. animal, landmark, pokemon */
+  category?: string;
+  /** voor fictieve figuren: waar ze vandaan komen (Pokémon, Marvel…) */
+  franchise?: string;
   /** Pad relatief aan /public, bv. "objects/baksteen.webp". Optioneel: de emoji is de fallback. */
   image?: string;
   emoji: string;

@@ -57,7 +57,8 @@ describe('roastLine', () => {
     expect(line).not.toContain('{');
   });
   it('kiest een stemming per score', () => {
-    expect(moodFor(100)).toBe('happy');
+    expect(moodFor(100)).toBe('cool');
+    expect(moodFor(95)).toBe('happy');
     expect(moodFor(0)).toBe('dead');
   });
 });

@@ -8,7 +8,7 @@ import { load, save } from '../game/storage';
 import type { GameObject } from '../game/types';
 import { endScreen } from './endScreen';
 import { gameScreen } from './gameScreen';
-import { homeScreen } from './homeScreen';
+import { homeScreen, type PracticeKind } from './homeScreen';
 import { creditsScreen } from './creditsScreen';
 import { preloadScale, weightIcons } from '../scale';
 
@@ -27,6 +27,7 @@ export function startApp(root: HTMLElement) {
     cleanup = f();
   };
 
+  let lastKind: PracticeKind = 'mix';
   const home = () =>
     show(() =>
       homeScreen(root, {
@@ -70,17 +71,19 @@ export function startApp(root: HTMLElement) {
         number: puzzleNumber(day),
         results: rec.rounds,
         objects: dailySelection(POOL, day),
-        onAgain: practice,
+        onAgain: () => practice(),
         onHome: home,
       }),
     );
   }
 
-  function practice() {
+  function practice(kind: PracticeKind = 'mix') {
+    lastKind = kind;
     const recent = load().practice.recent;
+    const pool = kind === 'mix' ? POOL : POOL.filter((o) => o.fictional === (kind === 'fictional'));
     // ?test=id1,id2 speelt precies die voorwerpen (handig om nieuwe foto's of renders te bekijken)
     const forced = new URLSearchParams(location.search).get('test')?.split(',').map((id) => POOL.find((o) => o.id === id)).filter((o): o is GameObject => !!o);
-    const objs = forced?.length ? forced : practiceSelection(POOL, recent);
+    const objs = forced?.length ? forced : practiceSelection(pool, recent);
     const session = new Session('practice', objs, null);
     save((s) => {
       s.seenIntro = true;
@@ -101,7 +104,7 @@ export function startApp(root: HTMLElement) {
               number: null,
               results: s.results,
               objects: s.objects,
-              onAgain: practice,
+              onAgain: () => practice(lastKind),
               onHome: home,
             }),
           );

@@ -1,15 +1,15 @@
 /** All game copy. English is the active language; nl.ts is kept for a later Dutch toggle. */
 export const en = {
   appName: 'Weegschaal',
-  tagline: 'Guess the weight. Load the scale. Get roasted.',
+  tagline: '5 things. Guess their weight. Get roasted.',
   home: {
     playDaily: (n: number) => `Play today’s #${n}`,
     dailyDone: (n: number) => `See today’s #${n}`,
     continueDaily: (n: number, r: number) => `Continue #${n} · ${r}/5`,
-    practice: 'Free play',
+    practice: 'Solo',
     how: 'How it works',
     howSteps: [
-      ['Something lands on the left pan.', 'An egg. A hippo. A troll from Kortrijk.'],
+      ['Something lands on the left pan.', 'An egg. A hippo. A Pokémon.'],
       ['Load the right pan.', 'Tap or drag weights. Tap a weight on the pan to take it back.'],
       ['Hit Weigh!', 'The lock pops, the scale tips, and you get judged. Hard.'],
     ] as [string, string][],
@@ -20,7 +20,7 @@ export const en = {
     credits: 'Photo credits',
     creditsIntro: 'Photos from Wikimedia Commons, used under their free licences. Backgrounds removed.',
     leaderboardSoon: 'Leaderboards coming soon',
-    greetings: ['Feed me.', 'I’m hungry for weights.', 'Go on. Guess. I dare you.', 'Back for more humiliation?', 'Ready when you are, champ.'],
+    greetings: ['Oh. You again.', 'Go on. Guess. I dare you.', 'Back for more humiliation?', 'I’ve seen your stats. Brave.', 'Feed the scale.'],
   },
   game: {
     round: (r: number, n: number) => `Round ${r} of ${n}`,

@@ -17,7 +17,8 @@
       "author": "Mark Morgan from Trinidad",
       "license": "CC BY 2.0",
       "url": "https://commons.wikimedia.org/wiki/File:1999_Euro_1_cent_Belgium_(5218848094).jpg"
-    }
+    },
+    "category": "money"
   },
   {
     "id": "euro-2",
@@ -31,13 +32,14 @@
     ],
     "emoji": "🪙",
     "source": "https://www.ecb.europa.eu/euro/coins/common/html/index.nl.html",
-    "funFact": "The edge of the Belgian 2-euro coin is decorated with stars and the number 2, twice.",
+    "funFact": "Every euro country designs its own national side. The common side is identical everywhere.",
     "image": "objects/euro-2.webp",
     "credit": {
       "author": "Unknown authorUnknown author",
       "license": "CC BY 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:2_Euro,_France.jpg"
-    }
+    },
+    "category": "money"
   },
   {
     "id": "a4-blad",
@@ -51,7 +53,8 @@
     ],
     "emoji": "📄",
     "source": "https://nl.wikipedia.org/wiki/Grammage",
-    "funFact": "An A4 sheet is exactly 1/16 of a square metre. At 80 g/m², that makes 5 g."
+    "funFact": "An A4 sheet is exactly 1/16 of a square metre. At 80 g/m², that makes 5 g.",
+    "category": "office"
   },
   {
     "id": "kippenei",
@@ -72,7 +75,8 @@
       "author": "User: MrX",
       "license": "CC BY-SA 3.0",
       "url": "https://commons.wikimedia.org/wiki/File:Chicken_egg.png"
-    }
+    },
+    "category": "food"
   },
   {
     "id": "tennisbal",
@@ -92,7 +96,8 @@
       "author": "Miscellaneous contributor",
       "license": "CC0",
       "url": "https://commons.wikimedia.org/wiki/File:Closeup_of_a_tennis_ball_(2).jpg"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "golfbal",
@@ -112,7 +117,8 @@
       "author": "Lotus Head from Johannesburg, Gauteng, South Africa",
       "license": "CC BY-SA 3.0",
       "url": "https://commons.wikimedia.org/wiki/File:Golfball.jpg"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "pingpongbal",
@@ -126,7 +132,8 @@
     ],
     "emoji": "🏓",
     "source": "https://en.wikipedia.org/wiki/Table_tennis",
-    "funFact": "Since 2000 the official ball is 40 mm, bigger than before, so the game is slower and easier to follow on TV."
+    "funFact": "Since 2000 the official ball is 40 mm, bigger than before, so the game is slower and easier to follow on TV.",
+    "category": "sport"
   },
   {
     "id": "blikje-frisdrank",
@@ -142,7 +149,8 @@
     "emoji": "🥤",
     "source": "https://en.wikipedia.org/wiki/Beverage_can",
     "funFact": "An empty aluminium can weighs only about 13 g.",
-    "estimate": true
+    "estimate": true,
+    "category": "food"
   },
   {
     "id": "aa-batterij",
@@ -156,7 +164,8 @@
     ],
     "emoji": "🔋",
     "source": "https://en.wikipedia.org/wiki/AA_battery",
-    "funFact": "The AA battery was developed in 1907 but only officially named “AA” in 1947."
+    "funFact": "The AA battery was developed in 1907 but only officially named “AA” in 1947.",
+    "category": "tech"
   },
   {
     "id": "fles-water",
@@ -177,7 +186,8 @@
       "author": "Alabama Extension",
       "license": "CC0",
       "url": "https://commons.wikimedia.org/wiki/File:Water_Bottle_(51308317077).jpg"
-    }
+    },
+    "category": "food"
   },
   {
     "id": "smartphone",
@@ -197,7 +207,8 @@
       "author": "ThePhotoGraphIc",
       "license": "CC BY-SA 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:Back_of_iPhone_15.jpg"
-    }
+    },
+    "category": "tech"
   },
   {
     "id": "voetbal",
@@ -217,7 +228,8 @@
       "author": "2010 World Cup - Shine 2010 from Johannesburg, South Africa",
       "license": "CC BY 2.0",
       "url": "https://commons.wikimedia.org/wiki/File:1970_-_Telstar_(Mexico)_(4171467668).jpg"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "basketbal",
@@ -238,7 +250,8 @@
       "author": "https://en.wikipedia.org/wiki/User:Verpacker_Ing.",
       "license": "Public domain",
       "url": "https://commons.wikimedia.org/wiki/File:Molten_GL7.jpg"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "baksteen",
@@ -260,7 +273,8 @@
       "author": "Andrewlister",
       "license": "Public domain",
       "url": "https://commons.wikimedia.org/wiki/File:Brick.jpg"
-    }
+    },
+    "category": "building"
   },
   {
     "id": "shuttle",
@@ -280,7 +294,8 @@
       "author": "Stanislas PERRIN",
       "license": "Public domain",
       "url": "https://commons.wikimedia.org/wiki/File:Koogan_badminton_feather_shuttlecock_01.JPG"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "olympische-medaille",
@@ -294,7 +309,8 @@
     ],
     "emoji": "🥇",
     "source": "https://en.wikipedia.org/wiki/2024_Summer_Olympics_medals",
-    "funFact": "An Olympic “gold” medal is mostly silver with about 6 g of gold plating."
+    "funFact": "An Olympic “gold” medal is mostly silver with about 6 g of gold plating.",
+    "category": "sport"
   },
   {
     "id": "mensenbrein",
@@ -309,7 +325,8 @@
     "emoji": "🧠",
     "source": "https://en.wikipedia.org/wiki/Human_brain",
     "funFact": "Your brain is 2% of your body weight but burns about 20% of your energy.",
-    "estimate": true
+    "estimate": true,
+    "category": "body"
   },
   {
     "id": "mensenhart",
@@ -330,7 +347,8 @@
       "author": "Dguendel",
       "license": "CC BY 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:Dresden,_Deutsches_Hygiene-Museum,_anatomisches_Modell,_Herz.jpg"
-    }
+    },
+    "category": "body"
   },
   {
     "id": "speer",
@@ -344,7 +362,8 @@
     ],
     "emoji": "🎯",
     "source": "https://en.wikipedia.org/wiki/Javelin_throw",
-    "funFact": "The javelin world record has stood at 98.48 m since 1996 (Jan Železný)."
+    "funFact": "The javelin world record has stood at 98.48 m since 1996 (Jan Železný).",
+    "category": "sport"
   },
   {
     "id": "discus",
@@ -358,7 +377,8 @@
     ],
     "emoji": "🥏",
     "source": "https://en.wikipedia.org/wiki/Discus_throw",
-    "funFact": "Discus throwing was already an event at the ancient Olympic Games."
+    "funFact": "Discus throwing was already an event at the ancient Olympic Games.",
+    "category": "sport"
   },
   {
     "id": "bijkolibrie",
@@ -379,7 +399,8 @@
       "author": "Charles J. Sharp",
       "license": "CC BY-SA 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:Bee_hummingbird_(Mellisuga_helenae)_female_cr.jpg"
-    }
+    },
+    "category": "animal"
   },
   {
     "id": "honkbal",
@@ -399,7 +420,8 @@
       "author": "Onbekend",
       "license": "CC-BY-SA-2.0",
       "url": "https://en.wikipedia.org/wiki/File:Baseball_(crop).jpg"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "volleybal",
@@ -419,7 +441,8 @@
       "author": "Petar Milošević",
       "license": "CC BY-SA 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:Mikasa_VLS300_official_beach_volleyball.jpg"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "kogel",
@@ -439,7 +462,8 @@
       "author": "Santeri Viinamäki",
       "license": "CC BY 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:Shot_put_ball.JPG"
-    }
+    },
+    "category": "sport"
   },
   {
     "id": "halterstang",
@@ -453,7 +477,8 @@
     ],
     "emoji": "🏋️",
     "source": "https://en.wikipedia.org/wiki/Barbell",
-    "funFact": "An Olympic bar is 2.2 m long and can hold over 600 kg."
+    "funFact": "An Olympic bar is 2.2 m long and can hold over 600 kg.",
+    "category": "sport"
   },
   {
     "id": "zak-cement",
@@ -467,7 +492,8 @@
     ],
     "emoji": "🛍️",
     "source": "https://nl.wikipedia.org/wiki/Cement",
-    "funFact": "25 kg is the European limit bags are designed around, to save your back."
+    "funFact": "25 kg is the European limit bags are designed around, to save your back.",
+    "category": "building"
   },
   {
     "id": "curlingsteen",
@@ -482,7 +508,8 @@
     "emoji": "🥌",
     "source": "https://en.wikipedia.org/wiki/Curling",
     "funFact": "Almost every Olympic curling stone comes from the tiny Scottish island of Ailsa Craig.",
-    "estimate": true
+    "estimate": true,
+    "category": "sport"
   },
   {
     "id": "kegel",
@@ -497,7 +524,8 @@
     "emoji": "🎳",
     "source": "https://en.wikipedia.org/wiki/Bowling_pin",
     "funFact": "A bowling pin is maple wood with a plastic coating.",
-    "estimate": true
+    "estimate": true,
+    "category": "sport"
   },
   {
     "id": "struisvogelei",
@@ -513,7 +541,8 @@
     "emoji": "🥚",
     "source": "https://en.wikipedia.org/wiki/Common_ostrich",
     "funFact": "Hard-boiling an ostrich egg takes about 90 minutes.",
-    "estimate": true
+    "estimate": true,
+    "category": "animal"
   },
   {
     "id": "hart-vinvis",
@@ -529,22 +558,24 @@
     "emoji": "🫀",
     "source": "https://en.wikipedia.org/wiki/Blue_whale",
     "funFact": "A blue whale’s heart is roughly the size of a golf cart.",
-    "estimate": true
+    "estimate": true,
+    "category": "animal"
   },
   {
     "id": "pasgeborene",
     "name": "Newborn baby",
-    "description": "Average, in Belgium.",
-    "grams": 3350,
+    "description": "Average full-term newborn.",
+    "grams": 3300,
     "fictional": false,
     "difficulty": 3,
     "tags": [
       "lichaam"
     ],
     "emoji": "👶",
-    "source": "https://www.cebam.be/",
+    "source": "https://www.who.int/tools/child-growth-standards",
     "funFact": "Babies lose up to 10% of their birth weight in the first few days.",
-    "estimate": true
+    "estimate": true,
+    "category": "body"
   },
   {
     "id": "huismuis",
@@ -565,7 +596,8 @@
       "author": "DiegoDiegoDiego555",
       "license": "CC BY-SA 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:HouseMouse.jpg"
-    }
+    },
+    "category": "animal"
   },
   {
     "id": "wasmachine",
@@ -580,7 +612,8 @@
     "emoji": "🧺",
     "source": "https://en.wikipedia.org/wiki/Washing_machine",
     "funFact": "Many washing machines contain a concrete block to stop them dancing during the spin cycle.",
-    "estimate": true
+    "estimate": true,
+    "category": "home"
   },
   {
     "id": "concertvleugel",
@@ -601,7 +634,8 @@
       "author": "KarlKunde",
       "license": "CC BY-SA 3.0",
       "url": "https://commons.wikimedia.org/wiki/File:D274.jpg"
-    }
+    },
+    "category": "music"
   },
   {
     "id": "smart",
@@ -616,7 +650,8 @@
     "emoji": "🚗",
     "source": "https://en.wikipedia.org/wiki/Smart_Fortwo",
     "funFact": "A Smart ForTwo is 2.5 m long, shorter than many cars are wide with their doors open.",
-    "estimate": true
+    "estimate": true,
+    "category": "vehicle"
   },
   {
     "id": "liberty-bell",
@@ -636,7 +671,8 @@
       "author": "William Zhang",
       "license": "CC BY 2.0",
       "url": "https://commons.wikimedia.org/wiki/File:Liberty_Bell_2017a.jpg"
-    }
+    },
+    "category": "landmark"
   },
   {
     "id": "nijlpaard",
@@ -657,7 +693,8 @@
       "author": "Muhammad Mahdi Karim",
       "license": "CC BY-SA 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:Portrait_Hippopotamus_in_the_water.jpg"
-    }
+    },
+    "category": "animal"
   },
   {
     "id": "zeecontainer",
@@ -672,7 +709,8 @@
     "emoji": "📦",
     "source": "https://en.wikipedia.org/wiki/Intermodal_container",
     "funFact": "A 20 ft container can carry more than 28 tonnes of cargo.",
-    "estimate": true
+    "estimate": true,
+    "category": "vehicle"
   },
   {
     "id": "olifant",
@@ -693,7 +731,8 @@
       "author": "Giles Laurent",
       "license": "CC BY-SA 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:178_Male_African_bush_elephant_in_Etosha_National_Park_Photo_by_Giles_Laurent.jpg"
-    }
+    },
+    "category": "animal"
   },
   {
     "id": "trex",
@@ -709,7 +748,8 @@
     "emoji": "🦖",
     "source": "https://en.wikipedia.org/wiki/Tyrannosaurus",
     "funFact": "A T. rex had teeth up to 30 cm long, roots included.",
-    "estimate": true
+    "estimate": true,
+    "category": "dinosaur"
   },
   {
     "id": "big-ben",
@@ -723,34 +763,14 @@
     ],
     "emoji": "🔔",
     "source": "https://www.parliament.uk/bigben",
-    "funFact": "Big Ben is the name of the bell, not the tower."
-  },
-  {
-    "id": "leeuw-waterloo",
-    "name": "Lion of Waterloo",
-    "description": "Cast iron, on an artificial hill.",
-    "grams": 28000000,
-    "fictional": false,
-    "difficulty": 4,
-    "tags": [
-      "belgie",
-      "geschiedenis"
-    ],
-    "emoji": "🦁",
-    "source": "https://nl.wikipedia.org/wiki/Leeuw_van_Waterloo",
-    "funFact": "You climb 226 steps to reach the lion.",
-    "image": "objects/leeuw-waterloo.webp",
-    "credit": {
-      "author": "EmDee",
-      "license": "CC BY-SA 4.0",
-      "url": "https://commons.wikimedia.org/wiki/File:Belgique_-_Butte_du_Lion_-_04.jpg"
-    }
+    "funFact": "Big Ben is the name of the bell, not the tower.",
+    "category": "landmark"
   },
   {
     "id": "vrachtwagen",
-    "name": "Fully loaded lorry",
-    "description": "Belgium’s legal maximum (5 axles).",
-    "grams": 44000000,
+    "name": "Fully loaded lorry (EU max)",
+    "description": "Five axles, the standard EU limit for international traffic.",
+    "grams": 40000000,
     "fictional": false,
     "difficulty": 4,
     "tags": [
@@ -758,14 +778,15 @@
       "belgie"
     ],
     "emoji": "🚛",
-    "source": "https://mobilit.belgium.be/",
-    "funFact": "A 44-tonne lorry weighs about as much as 30 regular cars.",
+    "source": "https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX%3A31996L0053",
+    "funFact": "A 40-tonne lorry weighs about as much as 27 regular cars.",
     "image": "objects/vrachtwagen.webp",
     "credit": {
       "author": "User Arpingstone on en.wikipedia",
       "license": "Public domain",
       "url": "https://commons.wikimedia.org/wiki/File:Artic.lorry.arp.750pix.jpg"
-    }
+    },
+    "category": "vehicle"
   },
   {
     "id": "boeing-737",
@@ -786,7 +807,8 @@
       "author": "4300streetcar",
       "license": "CC BY 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:Delta_Boeing_737-800_N371DA_departing_Boston_June_2025.jpg"
-    }
+    },
+    "category": "vehicle"
   },
   {
     "id": "blauwe-vinvis",
@@ -801,7 +823,8 @@
     "emoji": "🐋",
     "source": "https://en.wikipedia.org/wiki/Blue_whale",
     "funFact": "A blue whale outweighs every dinosaur ever found.",
-    "estimate": true
+    "estimate": true,
+    "category": "animal"
   },
   {
     "id": "iss",
@@ -815,7 +838,8 @@
     ],
     "emoji": "🛰️",
     "source": "https://www.nasa.gov/reference/international-space-station/",
-    "funFact": "The ISS circles the Earth every 90 minutes."
+    "funFact": "The ISS circles the Earth every 90 minutes.",
+    "category": "space"
   },
   {
     "id": "a380",
@@ -836,7 +860,8 @@
       "author": "F1jmm",
       "license": "CC BY-SA 3.0",
       "url": "https://commons.wikimedia.org/wiki/File:A380_01.jpg"
-    }
+    },
+    "category": "vehicle"
   },
   {
     "id": "olympisch-zwembad",
@@ -850,7 +875,8 @@
     ],
     "emoji": "🏊",
     "source": "https://en.wikipedia.org/wiki/Olympic-size_swimming_pool",
-    "funFact": "2,500 m³ of water: enough for about 30,000 bathtubs."
+    "funFact": "2,500 m³ of water: enough for about 30,000 bathtubs.",
+    "category": "sport"
   },
   {
     "id": "atomium",
@@ -871,7 +897,8 @@
       "author": "Trougnouf (Benoit Brummer)",
       "license": "CC BY 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:The_Atomium_during_civil_twilight_(DSCF1135).jpg"
-    }
+    },
+    "category": "landmark"
   },
   {
     "id": "saturn-v",
@@ -886,7 +913,8 @@
     "emoji": "🚀",
     "source": "https://en.wikipedia.org/wiki/Saturn_V",
     "funFact": "More than 90% of a Saturn V’s weight was fuel.",
-    "estimate": true
+    "estimate": true,
+    "category": "space"
   },
   {
     "id": "eiffeltoren",
@@ -906,176 +934,267 @@
       "author": "Photo: © Giles Laurent / Illumination: © Pierre Bideau, concepteur Lumière, pour…",
       "license": "CC BY-SA 4.0",
       "url": "https://commons.wikimedia.org/wiki/File:1000_Eiffel_tower_night_illumination_by_Pierre_Bideau_in_Paris_Photo_by_Giles_Laurent.jpg"
-    }
+    },
+    "category": "landmark"
   },
   {
-    "id": "brugtrol-bertrand",
-    "name": "Bertrand the Bridge Troll",
-    "description": "Lives under a bridge in Kortrijk and charges tolls in pralines.",
-    "grams": 340000,
-    "fictional": true,
-    "difficulty": 3,
-    "tags": [
-      "belgie",
-      "trollen"
-    ],
-    "emoji": "🧌",
-    "funFact": "Bertrand eats a full bucket of mussels every Sunday. Shells included."
-  },
-  {
-    "id": "wolkenschaap-wendy",
-    "name": "Wendy the Cloud Sheep",
-    "description": "A sheep made of pure cloud wool. Grazes above the Westhoek.",
-    "grams": 12,
+    "id": "pikachu",
+    "name": "Pikachu",
+    "description": "The electric mouse. Official Pokédex weight.",
+    "grams": 6000,
     "fictional": true,
     "difficulty": 2,
     "tags": [
-      "dieren",
-      "lucht"
+      "pokemon"
     ],
-    "emoji": "🐑",
-    "funFact": "Wendy floats off when she sneezes. Her shepherd ties her down with a kite string."
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "⚡",
+    "source": "https://www.pokemon.com/us/pokedex/pikachu",
+    "funFact": "Pikachu stores electricity in the red pouches on its cheeks."
   },
   {
-    "id": "frietkotdraak-fernand",
-    "name": "Fernand the Chip-Shop Dragon",
-    "description": "Fries the chips with his own breath. Twice, obviously.",
-    "grams": 2300000,
+    "id": "snorlax",
+    "name": "Snorlax",
+    "description": "Eats, sleeps, blocks roads.",
+    "grams": 460000,
     "fictional": true,
     "difficulty": 4,
     "tags": [
-      "belgie",
-      "draken",
-      "eten"
+      "pokemon"
     ],
-    "emoji": "🐉",
-    "funFact": "Fernand refuses mayo. Stew gravy only, or he breathes fire."
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "😴",
+    "source": "https://www.pokemon.com/us/pokedex/snorlax",
+    "funFact": "Snorlax eats about 400 kg of food a day before it’s satisfied."
   },
   {
-    "id": "kabouter-kamiel",
-    "name": "Kamiel the Gnome",
-    "description": "An Ardennes gnome who never takes his hat off.",
-    "grams": 850,
+    "id": "charizard",
+    "name": "Charizard",
+    "description": "Fire-breathing, cape-free dragon.",
+    "grams": 90500,
+    "fictional": true,
+    "difficulty": 3,
+    "tags": [
+      "pokemon"
+    ],
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🔥",
+    "source": "https://www.pokemon.com/us/pokedex/charizard",
+    "funFact": "Charizard’s tail flame burns hotter when it’s been in tough battles."
+  },
+  {
+    "id": "jigglypuff",
+    "name": "Jigglypuff",
+    "description": "Sings you to sleep, then draws on your face.",
+    "grams": 5500,
     "fictional": true,
     "difficulty": 2,
     "tags": [
-      "belgie",
-      "kabouters"
+      "pokemon"
     ],
-    "emoji": "🧙",
-    "funFact": "Kamiel’s hat is half his total weight."
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🎤",
+    "source": "https://www.pokemon.com/us/pokedex/jigglypuff",
+    "funFact": "Jigglypuff can inflate its body to sing for longer."
   },
   {
-    "id": "mosselmonster-mia",
-    "name": "Mia the Mussel Monster",
-    "description": "Lives in the North Sea, off the coast of Ostend.",
-    "grams": 640000,
+    "id": "gengar",
+    "name": "Gengar",
+    "description": "A ghost with a grin.",
+    "grams": 40500,
     "fictional": true,
     "difficulty": 3,
     "tags": [
-      "belgie",
-      "zee"
+      "pokemon"
     ],
-    "emoji": "🦑",
-    "funFact": "Mia collects lost sunglasses. She’s at 3,412."
-  },
-  {
-    "id": "fluisterspook-firmin",
-    "name": "Firmin the Whispering Ghost",
-    "description": "Has haunted the Gravensteen castle in Ghent for 800 years.",
-    "grams": 3,
-    "fictional": true,
-    "difficulty": 3,
-    "tags": [
-      "belgie",
-      "spoken"
-    ],
+    "category": "pokemon",
+    "franchise": "Pokémon",
     "emoji": "👻",
-    "funFact": "Firmin weighs almost nothing, but you can hear his chains three streets away."
+    "source": "https://www.pokemon.com/us/pokedex/gengar",
+    "funFact": "Gengar is said to lower the temperature of a room by 5 °C just by being there."
   },
   {
-    "id": "spruitenreus-sander",
-    "name": "Sander the Sprout Giant",
-    "description": "A giant from Brussels who only eats sprouts.",
-    "grams": 18000000,
+    "id": "onix",
+    "name": "Onix",
+    "description": "An 8.8-metre rock snake.",
+    "grams": 210000,
+    "fictional": true,
+    "difficulty": 4,
+    "tags": [
+      "pokemon"
+    ],
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🪨",
+    "source": "https://www.pokemon.com/us/pokedex/onix",
+    "funFact": "Onix tunnels underground at about 80 km/h."
+  },
+  {
+    "id": "wailord",
+    "name": "Wailord",
+    "description": "14.5 m long. Somehow lighter than you think.",
+    "grams": 398000,
+    "fictional": true,
+    "difficulty": 4,
+    "tags": [
+      "pokemon"
+    ],
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🐋",
+    "source": "https://www.pokemon.com/us/pokedex/wailord",
+    "funFact": "Wailord is the longest Pokémon in the Pokédex, but lighter than Snorlax."
+  },
+  {
+    "id": "groudon",
+    "name": "Groudon",
+    "description": "The legendary continent-maker.",
+    "grams": 950000,
     "fictional": true,
     "difficulty": 5,
     "tags": [
-      "belgie",
-      "reuzen",
-      "eten"
+      "pokemon"
     ],
-    "emoji": "🥬",
-    "funFact": "Sander is 42 m tall and wears shoe size 312."
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🌋",
+    "source": "https://www.pokemon.com/us/pokedex/groudon",
+    "funFact": "Legend says Groudon raised the land by evaporating the sea."
   },
   {
-    "id": "pralinekrokodil",
-    "name": "Paulien the Praline Croc",
-    "description": "A crocodile made of pure chocolate. Keep out of the sun.",
-    "grams": 75000,
+    "id": "eevee",
+    "name": "Eevee",
+    "description": "Fluffy, adaptable, evolves into everything.",
+    "grams": 6500,
     "fictional": true,
-    "difficulty": 3,
+    "difficulty": 2,
     "tags": [
-      "eten",
-      "dieren"
+      "pokemon"
     ],
-    "emoji": "🐊",
-    "funFact": "Paulien melts at 32 °C. On hot days she sleeps in the baker’s fridge."
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🦊",
+    "source": "https://www.pokemon.com/us/pokedex/eevee",
+    "funFact": "Eevee can evolve into eight different Pokémon."
   },
   {
-    "id": "kermiskoe-clementine",
-    "name": "Clementine the Funfair Cow",
-    "description": "Rides the bumper cars at the Ghent Festival every summer.",
-    "grams": 9200000,
-    "fictional": true,
-    "difficulty": 4,
-    "tags": [
-      "belgie",
-      "dieren"
-    ],
-    "emoji": "🐄",
-    "funFact": "Clementine has never lost a collision."
-  },
-  {
-    "id": "bierbuikbeer-bruno",
-    "name": "Bruno the Beer-Belly Bear",
-    "description": "Tours the abbeys looking for the perfect tripel.",
-    "grams": 1250000,
-    "fictional": true,
-    "difficulty": 4,
-    "tags": [
-      "belgie",
-      "dieren",
-      "drank"
-    ],
-    "emoji": "🐻",
-    "funFact": "Bruno can tell which abbey a beer comes from by the foam alone."
-  },
-  {
-    "id": "regenworm-rik",
-    "name": "Rik the Earthworm",
-    "description": "The longest creature in Aunt Godelieve’s veg patch.",
-    "grams": 4,
+    "id": "gastly",
+    "name": "Gastly",
+    "description": "Mostly poisonous gas.",
+    "grams": 100,
     "fictional": true,
     "difficulty": 1,
     "tags": [
-      "dieren"
+      "pokemon"
     ],
-    "emoji": "🪱",
-    "funFact": "Rik is 2 m long and terrified of blackbirds."
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "💨",
+    "source": "https://www.pokemon.com/us/pokedex/gastly",
+    "funFact": "Gastly’s body is 95% gas, which explains the official 0.1 kg."
   },
   {
-    "id": "kasseiknorf",
-    "name": "The Cobble Gremlin",
-    "description": "Lives between the cobbles of the Koppenberg and hates bike tyres.",
-    "grams": 95000,
+    "id": "celesteela",
+    "name": "Celesteela",
+    "description": "A bamboo rocket from another dimension.",
+    "grams": 999900,
+    "fictional": true,
+    "difficulty": 5,
+    "tags": [
+      "pokemon"
+    ],
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🚀",
+    "source": "https://www.pokemon.com/us/pokedex/celesteela",
+    "funFact": "Celesteela shares the record for heaviest Pokémon at 999.9 kg."
+  },
+  {
+    "id": "bulbasaur",
+    "name": "Bulbasaur",
+    "description": "Pokédex #0001. Has a plant on its back.",
+    "grams": 6900,
+    "fictional": true,
+    "difficulty": 2,
+    "tags": [
+      "pokemon"
+    ],
+    "category": "pokemon",
+    "franchise": "Pokémon",
+    "emoji": "🌱",
+    "source": "https://www.pokemon.com/us/pokedex/bulbasaur",
+    "funFact": "The bulb on its back grows by absorbing sunlight."
+  },
+  {
+    "id": "sonic",
+    "name": "Sonic the Hedgehog",
+    "description": "Gotta go fast.",
+    "grams": 35000,
     "fictional": true,
     "difficulty": 3,
     "tags": [
-      "belgie",
-      "sport"
+      "game"
     ],
-    "emoji": "🪨",
-    "funFact": "The Cobble Gremlin has entered the Tour of Flanders for 40 years. Never finished."
+    "category": "game",
+    "franchise": "Sega",
+    "emoji": "🦔",
+    "source": "https://sonic.sega.jp/SonicChannel/enjoy/character/",
+    "funFact": "Sonic’s official profile lists him at 35 kg and 100 cm tall.",
+    "estimate": true
+  },
+  {
+    "id": "hulk",
+    "name": "The Hulk",
+    "description": "Bruce Banner, after a bad day.",
+    "grams": 472000,
+    "fictional": true,
+    "difficulty": 4,
+    "tags": [
+      "comics"
+    ],
+    "category": "comics",
+    "franchise": "Marvel",
+    "emoji": "💚",
+    "source": "https://www.marvel.com/characters/hulk-bruce-banner",
+    "funFact": "Marvel’s official handbook lists the Hulk at 1,040 lbs.",
+    "estimate": true
+  },
+  {
+    "id": "mjolnir",
+    "name": "Mjölnir",
+    "description": "Thor’s hammer. Only the worthy can lift it.",
+    "grams": 19200,
+    "fictional": true,
+    "difficulty": 3,
+    "tags": [
+      "comics"
+    ],
+    "category": "comics",
+    "franchise": "Marvel",
+    "emoji": "🔨",
+    "source": "https://www.marvel.com/characters/thor-thor-odinson",
+    "funFact": "The often-quoted 42.3 lbs comes from a Marvel handbook; worthiness not included.",
+    "estimate": true
+  },
+  {
+    "id": "cap-shield",
+    "name": "Captain America’s shield",
+    "description": "Vibranium-steel alloy disc.",
+    "grams": 5400,
+    "fictional": true,
+    "difficulty": 2,
+    "tags": [
+      "comics"
+    ],
+    "category": "comics",
+    "franchise": "Marvel",
+    "emoji": "🛡️",
+    "source": "https://www.marvel.com/characters/captain-america-steve-rogers",
+    "funFact": "Marvel’s handbook lists the shield at 12 lbs.",
+    "estimate": true
   }
 ]

@@ -1,10 +1,13 @@
 export interface ScaleObject {
   emoji: string;
   image?: string;
+  /** voor de hologramkaart als er geen foto is */
+  title?: string;
+  sub?: string;
 }
 
 /** Gezichtsuitdrukking van de balans. */
-export type Mood = 'idle' | 'focus' | 'strain' | 'surprised' | 'happy' | 'meh' | 'angry' | 'dead' | 'smug';
+export type Mood = 'idle' | 'focus' | 'strain' | 'surprised' | 'happy' | 'cool' | 'meh' | 'angry' | 'dead' | 'smug';
 
 export interface ScaleCallbacks {
   /** Er landt iets op een schaal. `strength` 0–1. */
