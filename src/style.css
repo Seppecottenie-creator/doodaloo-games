@@ -53,6 +53,9 @@ button {
   outline-offset: 3px;
   border-radius: 12px;
 }
+[hidden] {
+  display: none !important;
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -529,6 +532,16 @@ button {
 
 .obj-card {
   padding: 4px 2px 0;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.obj-text {
+  min-width: 0;
+  flex: 1;
+}
+.obj-thumb {
+  display: none;
 }
 .obj-card.enter > * {
   animation: rise 0.6s var(--ease-out) both;
@@ -824,9 +837,10 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0;
-  height: 52px;
+  justify-content: flex-end;
+  gap: 1px;
+  height: 66px;
+  padding-bottom: 5px !important;
   padding: 2px;
   border-radius: 16px;
   background: var(--card-2);
@@ -857,13 +871,18 @@ button {
 }
 .w-icon {
   pointer-events: none;
-  width: 30px;
-  height: 20px;
+  width: 52px;
+  height: 36px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.7));
+  transition: transform 0.2s var(--spring);
+}
+.w-btn:active .w-icon,
+.w-btn.holding .w-icon {
+  transform: translateY(3px) scale(0.92);
 }
 .w-label {
-  font-size: 0.82rem;
+  font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;
   color: var(--ink);
@@ -1381,18 +1400,180 @@ button {
   z-index: 40;
 }
 
-@media (max-height: 760px) {
+@media (max-height: 760px) and (max-width: 899px) {
   .obj-desc {
     display: none;
   }
   .w-btn {
-    height: 46px;
+    height: 54px;
   }
   .w-icon {
-    height: 16px;
+    height: 26px;
   }
   .weigh {
     height: 56px;
+  }
+}
+
+/* ---------- pc: een echte website ---------- */
+@media (min-width: 900px) {
+  #app {
+    max-width: 1320px;
+  }
+  .screen {
+    padding: 24px 40px 28px;
+  }
+
+  /* spel: grote stage links, bedieningspaneel rechts */
+  .game {
+    grid-template-columns: minmax(0, 1.65fr) minmax(380px, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      'hud hud'
+      'stage card'
+      'stage readout'
+      'stage bottom';
+    column-gap: 28px;
+    row-gap: 14px;
+  }
+  .hud {
+    grid-area: hud;
+  }
+  .hud-row {
+    grid-template-columns: auto minmax(0, 520px) auto;
+    justify-content: space-between;
+  }
+  .hud-round {
+    text-align: left;
+  }
+  .obj-card {
+    grid-area: card;
+    padding: 18px;
+    border-radius: 24px;
+    background: var(--card);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .obj-thumb {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 112px;
+    height: 112px;
+    border-radius: 20px;
+    background: radial-gradient(circle at 50% 45%, rgba(183, 156, 255, 0.25), transparent 70%), var(--card-2);
+    box-shadow: inset 0 0 0 1px var(--line);
+    overflow: hidden;
+  }
+  .obj-thumb img {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.6));
+  }
+  .thumb-glyph {
+    font-size: 3.4rem;
+  }
+  .obj-name,
+  .obj-name.long {
+    font-size: clamp(2rem, 2.8vw, 2.9rem);
+  }
+  .stage {
+    grid-area: stage;
+    border-radius: 32px;
+  }
+  .stage-label {
+    font-size: 0.7rem;
+    top: 18px;
+  }
+  .stage-label.left {
+    left: 22px;
+  }
+  .stage-label.right {
+    right: 22px;
+  }
+  .credit {
+    left: 22px;
+    top: 38px;
+    font-size: 0.65rem;
+  }
+  .readout {
+    grid-area: readout;
+    align-items: flex-start;
+    padding: 4px 6px 0;
+  }
+  .total {
+    font-size: clamp(3rem, 4.4vw, 4.2rem);
+  }
+  .bottom {
+    grid-area: bottom;
+    justify-content: flex-start;
+  }
+  .tray {
+    gap: 8px;
+  }
+  .w-btn {
+    height: 78px;
+  }
+  .w-icon {
+    width: 64px;
+    height: 44px;
+  }
+  .w-label {
+    font-size: 0.8rem;
+  }
+  .sheet {
+    min-height: 0;
+    inset: 0 0 auto 0;
+    bottom: auto;
+  }
+  .bubble {
+    font-size: 1rem;
+    max-width: 300px;
+  }
+
+  /* home: grote kaart links, info rechts */
+  .home {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr);
+    grid-template-rows: auto auto auto 1fr auto;
+    column-gap: 24px;
+    row-gap: 14px;
+    align-content: start;
+  }
+  .home > .home-top {
+    grid-column: 1 / -1;
+  }
+  .home-card {
+    grid-column: 1;
+    grid-row: 2 / span 4;
+  }
+  .home > .stats,
+  .home > .ticker,
+  .home > .how,
+  .home > .foot {
+    grid-column: 2;
+  }
+  .card-head {
+    padding: 34px 36px 0;
+  }
+  .card-head h1 {
+    font-size: clamp(4rem, 7vw, 6.5rem);
+  }
+  .tagline {
+    font-size: 1.2rem;
+  }
+  .hero {
+    height: min(52vh, 520px);
+  }
+  .card-foot {
+    padding: 0 32px 30px;
+  }
+
+  /* einde en credits: gecentreerde kolom */
+  .end,
+  .credits {
+    max-width: 680px;
+    margin: 0 auto;
   }
 }
 

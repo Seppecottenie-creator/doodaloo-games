@@ -45,7 +45,8 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   const tagEl = h('span', { class: 'tag' });
   const catEl = h('span', { class: 'tag cat' });
   const descEl = h('p', { class: 'obj-desc' });
-  const card = h('section', { class: 'obj-card', 'aria-live': 'polite' }, h('div', { class: 'tags' }, tagEl, catEl), nameEl, descEl);
+  const thumbEl = h('div', { class: 'obj-thumb', 'aria-hidden': 'true' });
+  const card = h('section', { class: 'obj-card', 'aria-live': 'polite' }, thumbEl, h('div', { class: 'obj-text' }, h('div', { class: 'tags' }, tagEl, catEl), nameEl, descEl));
 
   const canvas = h('canvas', { class: 'scale-canvas', role: 'img', 'aria-label': t.game.locked });
   const hint = h('div', { class: 'stage-hint' }, t.game.emptyHint);
@@ -71,7 +72,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     trayBtns.push(btn);
     badges.push(badge);
     tray.append(btn);
-    requestAnimationFrame(() => paintWeightIcon(icon, idx, 40, 28));
+    requestAnimationFrame(() => paintWeightIcon(icon, idx, 52, 36));
   });
   void weightIcons().then((urls) => {
     if (!urls) return;
@@ -179,6 +180,8 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     catEl.hidden = !catEl.textContent;
     descEl.textContent = o.description;
     credit.textContent = o.credit ? `Photo: ${o.credit.author} · ${o.credit.license}` : '';
+    // scherpe afbeelding naast de naam (alleen zichtbaar op brede schermen)
+    thumbEl.replaceChildren(o.image ? h('img', { src: `${import.meta.env.BASE_URL}${o.image}`, alt: '' }) : h('span', { class: 'thumb-glyph' }, o.emoji));
     card.classList.remove('enter');
     void card.offsetWidth;
     card.classList.add('enter');
