@@ -228,13 +228,13 @@ class Mats {
   aqua = new MeshBasicMaterial({ color: 0x7ee8e2, toneMapped: false });
   pink = new MeshBasicMaterial({ color: 0xff5fd8, toneMapped: false });
   tick = new MeshBasicMaterial({ color: 0xd8d2ff, toneMapped: false, transparent: true, opacity: 0.75 });
-  // gewichten: chroom, gunmetal, grafiet
-  brass = new MeshStandardMaterial({ color: 0xd3d7e1, metalness: 1, roughness: 0.16 });
-  iron = new MeshStandardMaterial({ color: 0x2a2c35, metalness: 0.8, roughness: 0.32 });
-  ironDark = new MeshStandardMaterial({ color: 0x15161b, metalness: 0.7, roughness: 0.4 });
-  steel = new MeshStandardMaterial({ color: 0xc6ccd6, metalness: 1, roughness: 0.22 });
-  concrete = new MeshStandardMaterial({ color: 0x55575f, metalness: 0.1, roughness: 0.85 });
-  safe = new MeshStandardMaterial({ color: 0x2a2342, metalness: 0.6, roughness: 0.35 });
+  // gewichten: klassiek messing, gietijzer, beton en een groene brandkast
+  brass = new MeshStandardMaterial({ color: 0xd9ad4a, metalness: 1, roughness: 0.22 });
+  iron = new MeshStandardMaterial({ color: 0x2d2e33, metalness: 0.65, roughness: 0.5 });
+  ironDark = new MeshStandardMaterial({ color: 0x1a1b1f, metalness: 0.6, roughness: 0.55 });
+  steel = new MeshStandardMaterial({ color: 0xb8c0c8, metalness: 1, roughness: 0.3 });
+  concrete = new MeshStandardMaterial({ color: 0xa3a29b, metalness: 0, roughness: 0.95 });
+  safe = new MeshStandardMaterial({ color: 0x2f5a3e, metalness: 0.5, roughness: 0.4 });
   rubber = new MeshStandardMaterial({ color: 0x131317, metalness: 0.1, roughness: 0.7 });
   lockBody = new MeshStandardMaterial({ color: 0xeef0f6, metalness: 1, roughness: 0.1, transparent: true });
   lockShackle = new MeshStandardMaterial({ color: 0x7ee8e2, metalness: 0.6, roughness: 0.2, transparent: true });
