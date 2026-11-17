@@ -1,57 +1,59 @@
 import { describe, expect, it } from 'vitest';
-import { mulberry32 } from '../src/game/rng';
-import { dailyLevels, hull, iou, matchScore, rasterize, shadowPolys, shadyShare, type Part } from '../src/shady/logic';
+import { dailySeeds, iou, makePuzzle, matchScore, shadowRaster, shadyShare, targetRaster, type Mask } from '../src/shady/logic';
 
-const cube: Part[] = [{ kind: 'box', c: [0, 1, 0], s: [0.5, 0.5, 0.5] }];
+/** Een L-vormige figuur van 30 × 30 cellen als test-masker. */
+function lMask(): Mask {
+  const w = 30,
+    h = 30;
+  const cells = new Uint8Array(w * h);
+  for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) if (c < 10 || r > 20) cells[r * w + c] = 1;
+  return { w, h, cells };
+}
 
 describe('shady', () => {
-  it('hull of a square', () => {
-    expect(hull([[0, 0], [1, 0], [1, 1], [0, 1], [0.5, 0.5]])).toHaveLength(4);
+  it('the target sun reassembles the shape exactly', () => {
+    const seeds = dailySeeds('2026-11-17');
+    seeds.forEach((s, i) => {
+      const p = makePuzzle(s, lMask(), i);
+      const t = targetRaster(p.pieces);
+      expect(iou(t, shadowRaster(p.pieces, p.target, p.target))).toBe(1);
+      // de figuur blijft heel: alle cellen van het masker zijn verdeeld
+      expect(t.reduce((a, x) => a + x, 0)).toBe(lMask().cells.reduce((a, x) => a + x, 0));
+    });
   });
 
-  it('sun straight overhead casts the footprint', () => {
-    const polys = shadowPolys(cube, { az: 0, el: Math.PI / 2 - 1e-6 });
-    const r = rasterize(polys);
-    const cells = r.reduce((s, x) => s + x, 0);
-    // 1×1 op een rooster van 12/96 = 0,125 per cel → ±64 cellen
-    expect(cells).toBeGreaterThan(50);
-    expect(cells).toBeLessThan(90);
+  it('the starting sun scatters the pieces', () => {
+    dailySeeds('2026-11-18').forEach((s, i) => {
+      const p = makePuzzle(s, lMask(), i);
+      expect(iou(targetRaster(p.pieces), shadowRaster(p.pieces, p.target, p.start))).toBeLessThan(0.5);
+    });
   });
 
-  it('lower sun = longer shadow, pointing away from the sun', () => {
-    const high = rasterize(shadowPolys(cube, { az: 0, el: 1.2 })).reduce((s, x) => s + x, 0);
-    const low = rasterize(shadowPolys(cube, { az: 0, el: 0.5 })).reduce((s, x) => s + x, 0);
-    expect(low).toBeGreaterThan(high);
-    // zon in +x → schaduw naar −x
-    const xs = shadowPolys(cube, { az: 0, el: 0.5 })[0].map((p) => p[0]);
-    expect(Math.min(...xs)).toBeLessThan(-1);
+  it('close suns score higher than far suns', () => {
+    const p = makePuzzle(dailySeeds('2026-11-19')[2], lMask(), 2);
+    const t = targetRaster(p.pieces);
+    const near = iou(t, shadowRaster(p.pieces, p.target, { az: p.target.az + 0.03, el: p.target.el }));
+    const far = iou(t, shadowRaster(p.pieces, p.target, { az: p.target.az + 0.6, el: p.target.el }));
+    expect(near).toBeGreaterThan(far);
   });
 
-  it('iou is 1 for the target sun and lower elsewhere', () => {
-    for (const lv of dailyLevels('2026-11-17')) {
-      const t = rasterize(shadowPolys(lv.parts, lv.target));
-      expect(iou(t, t)).toBe(1);
-      expect(iou(t, rasterize(shadowPolys(lv.parts, lv.start)))).toBeLessThan(0.36);
-    }
+  it('pieces get more numerous and sit at different heights', () => {
+    const s = dailySeeds('2026-11-20');
+    const a = makePuzzle(s[0], lMask(), 0);
+    const b = makePuzzle(s[4], lMask(), 4);
+    expect(b.pieces.length).toBeGreaterThan(a.pieces.length);
+    expect(new Set(b.pieces.map((p) => p.h.toFixed(2))).size).toBe(b.pieces.length);
   });
 
-  it('daily levels are deterministic and 5 long', () => {
-    const a = dailyLevels('2026-11-17');
-    expect(a).toHaveLength(5);
-    expect(JSON.stringify(a)).toBe(JSON.stringify(dailyLevels('2026-11-17')));
+  it('daily shapes are fixed per day and distinct', () => {
+    const a = dailySeeds('2026-11-17').map((s) => s.shape.name);
+    expect(a).toEqual(dailySeeds('2026-11-17').map((s) => s.shape.name));
+    expect(new Set(a).size).toBe(5);
   });
 
   it('scores', () => {
-    expect(matchScore(0.98)).toBe(100);
-    expect(matchScore(0.5)).toBe(50);
-    expect(shadyShare(3, [100, 92, 80, 60, 10])).toContain('Shady #3 — 342/500');
-  });
-
-  it('level generation is quick', () => {
-    const r = mulberry32(5);
-    const t = performance.now();
-    for (let i = 0; i < 20; i++) dailyLevels(`2026-01-${10 + i}`);
-    expect(performance.now() - t).toBeLessThan(3000);
-    void r;
+    expect(matchScore(0.96)).toBe(100);
+    expect(matchScore(0.1)).toBe(0);
+    expect(shadyShare(4, [100, 90, 70, 50, 10], ['🐈'])).toContain('Shady #4 — 320/500');
   });
 });

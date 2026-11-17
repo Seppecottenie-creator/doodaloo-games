@@ -58,7 +58,7 @@ export function portalScreen(root: HTMLElement, opts: PortalOpts): () => void {
     'section',
     { class: 'q-games', 'aria-label': 'Games' },
     card({ num: '01', title: 'Weight For It', desc: 'Guess how heavy it is. Load the scale. Get roasted.', tag: 'DAILY', art: weighArt, onClick: opts.onWeigh, cls: 'c-weigh' }),
-    card({ num: '02', title: 'Shady', desc: 'Move the sun. Make the shadow fit the shape.', tag: 'NEW', art: shadyArt, onClick: opts.onShady, cls: 'c-shady' }),
+    card({ num: '02', title: 'Shady', desc: 'Floating shards. One perfect sun angle. Make their shadow become the shape.', tag: 'NEW', art: shadyArt, onClick: opts.onShady, cls: 'c-shady' }),
     card({ num: '03', title: 'Coming soon', desc: 'Something with sound. Or tempo. Not telling.', tag: 'SOON', art: lockedArt, cls: 'c-soon' }),
   );
 

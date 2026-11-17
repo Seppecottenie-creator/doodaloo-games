@@ -1,5 +1,5 @@
 /**
- * De 3D-scène van Shady: een beeld op een paal, een lichte vloer met de doelvorm, en een zon die je over de hemel sleept.
+ * De 3D-scène van Shady: zwevende scherven boven een lichte vloer, en een zon die je over de hemel sleept.
  * De schaduw is een echte shadow map van een DirectionalLight: precies dezelfde parallelle projectie als de score.
  */
 import {
@@ -8,7 +8,8 @@ import {
   BufferGeometry,
   CanvasTexture,
   CircleGeometry,
-  CylinderGeometry,
+  BoxGeometry,
+  Color,
   DirectionalLight,
   Float32BufferAttribute,
   Group,
@@ -33,8 +34,8 @@ import {
   WebGLRenderer,
 } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { clampEl, GROUND, sunDir, type Part, type Pt, type Sun } from './logic';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { CELL, cellX, clampEl, GROUND, kOf, SLAB, sunDir, type Puzzle, type Sun } from './logic';
 
 const SUN_R = 8.5;
 const TEX = 1024;
@@ -74,7 +75,6 @@ export class SundialView {
   private dragging = false;
   private lastPt = { x: 0, y: 0 };
   private anim: { from: Sun; to: Sun; t0: number; ms: number } | null = null;
-  private targetPolys: Pt[][] = [];
   sun: Sun = { az: 0, el: 1 };
   locked = false;
 
@@ -173,70 +173,82 @@ export class SundialView {
     this.loop();
   }
 
-  setLevel(parts: Part[], targetPolys: Pt[][], start: Sun) {
+  private mats: MeshPhysicalMaterial[] = [];
+
+  /** Bouw de scherven: elk stuk is een dunne plaat op zijn eigen hoogte, opgetild langs de straal van de geheime zon. */
+  setPuzzle(pz: Puzzle) {
+    this.sculpture.children.forEach((m) => (m as Mesh).geometry.dispose());
     this.sculpture.clear();
-    for (const p of parts) {
-      const geo =
-        p.kind === 'box'
-          ? new RoundedBoxGeometry(p.s[0] * 2, p.s[1] * 2, p.s[2] * 2, 3, 0.06)
-          : p.kind === 'sphere'
-            ? new SphereGeometry(p.s[0], 32, 16)
-            : new CylinderGeometry(p.s[0], p.s[0], p.s[1] * 2, 16);
-      const m = new Mesh(geo, p.kind === 'cyl' ? new MeshStandardMaterial({ color: 0x2a2440, metalness: 0.8, roughness: 0.3, envMap: this.env }) : this.mat);
-      m.position.set(...p.c);
+    this.mats.forEach((m) => m.dispose());
+    this.mats = [];
+    const [kx, kz] = kOf(pz.target);
+    const hues = [0.72, 0.5, 0.83, 0.78, 0.55, 0.9];
+    pz.pieces.forEach((p, n) => {
+      // per rij: aaneengesloten cellen worden één balkje
+      const rows = new Map<number, number[]>();
+      for (const [i, j] of p.cells) (rows.get(j) ?? rows.set(j, []).get(j)!).push(i);
+      const boxes: BufferGeometry[] = [];
+      for (const [j, is] of rows) {
+        is.sort((a, b) => a - b);
+        let start = is[0];
+        let prev = is[0];
+        const flush = () => {
+          const len = prev - start + 1;
+          const g = new BoxGeometry(len * CELL, SLAB, CELL);
+          g.translate((cellX(start) + cellX(prev)) / 2, 0, cellX(j));
+          boxes.push(g);
+        };
+        for (const i of is.slice(1)) {
+          if (i === prev + 1) prev = i;
+          else {
+            flush();
+            start = prev = i;
+          }
+        }
+        flush();
+      }
+      const geo = mergeGeometries(boxes);
+      boxes.forEach((g) => g.dispose());
+      const mat = this.mat.clone();
+      mat.color = new Color().setHSL(hues[n % hues.length], 0.75, 0.62);
+      mat.emissive = mat.color.clone();
+      mat.emissiveIntensity = 0;
+      mat.transparent = true;
+      mat.opacity = 0.82;
+      this.mats.push(mat);
+      const m = new Mesh(geo, mat);
+      const y = p.h + SLAB / 2;
+      m.position.set(kx * y, y, kz * y);
       m.castShadow = true;
       this.sculpture.add(m);
-    }
-    this.targetPolys = targetPolys;
-    this.drawTarget(0);
+    });
+    this.drawFloor();
+    this.setHeat(0);
     this.locked = false;
     this.anim = null;
-    this.setSun(start);
+    this.setSun(pz.start);
   }
 
-  /** Teken de doelvorm. heat 0..1 kleurt de rand van ijsblauw naar lime. */
-  drawTarget(heat: number) {
+  /** Hoe dichter bij de vorm, hoe meer de scherven gloeien. */
+  setHeat(h: number) {
+    for (const m of this.mats) m.emissiveIntensity = h * 0.55;
+  }
+
+  private drawFloor() {
     const g = this.overlayCanvas.getContext('2d')!;
     const S = TEX;
-    const map = ([x, z]: Pt): Pt => [((x + GROUND) / (GROUND * 2)) * S, ((z + GROUND) / (GROUND * 2)) * S];
-    const path = () => {
-      g.beginPath();
-      for (const poly of this.targetPolys) {
-        if (poly.length < 3) continue;
-        poly.map(map).forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
-        g.closePath();
-      }
-    };
     g.clearRect(0, 0, S, S);
-    // fijn raster op de vloer
-    g.strokeStyle = 'rgba(80,60,150,0.12)';
+    g.strokeStyle = 'rgba(80,60,150,0.13)';
     g.lineWidth = 1;
     for (let i = 0; i <= 24; i++) {
-      const p = (i / 24) * S;
+      const q = (i / 24) * S;
       g.beginPath();
-      g.moveTo(p, 0);
-      g.lineTo(p, S);
-      g.moveTo(0, p);
-      g.lineTo(S, p);
+      g.moveTo(q, 0);
+      g.lineTo(q, S);
+      g.moveTo(0, q);
+      g.lineTo(S, q);
       g.stroke();
     }
-    const hot = heat >= 0.95;
-    const col = hot ? '215,255,74' : heat > 0.5 ? '126,232,226' : '64,200,220';
-    // dikke rand, dan het binnenste wegknippen: alleen de buitenrand van de unie blijft over
-    g.save();
-    g.lineJoin = 'round';
-    g.strokeStyle = `rgba(${col},1)`;
-    g.lineWidth = hot ? 16 : 10;
-    path();
-    g.stroke();
-    g.globalCompositeOperation = 'destination-out';
-    path();
-    g.fill('nonzero');
-    g.globalCompositeOperation = 'source-over';
-    g.fillStyle = `rgba(${col},${hot ? 0.32 : 0.2})`;
-    path();
-    g.fill('nonzero');
-    g.restore();
     this.overlayTex.needsUpdate = true;
   }
 
@@ -257,7 +269,7 @@ export class SundialView {
     this.orbit.position.y = Math.sin(this.sun.el) * SUN_R;
     const pos = this.ray.geometry.getAttribute('position') as Float32BufferAttribute;
     pos.setXYZ(0, sp.x, sp.y, sp.z);
-    pos.setXYZ(1, 0, 1.8, 0);
+    pos.setXYZ(1, 0, 0, 0);
     pos.needsUpdate = true;
     this.canvas.parentElement?.style.setProperty('--dusk', low.toFixed(3));
     this.onSun(this.sun);
@@ -300,7 +312,7 @@ export class SundialView {
     this.camera.aspect = w / h;
     // gsm (staand): verder weg zodat de hele vloer en de zon in beeld blijven
     const far = w / h < 0.9 ? 1.6 : w / h < 1.3 ? 1.45 : 1.3;
-    this.camera.position.set(0, 12.5 * far, 10.5 * far);
+    this.camera.position.set(0, 14 * far, 8.5 * far);
     // staand scherm: vloer iets lager, zon en hemel krijgen de ruimte erboven
     this.camera.lookAt(0, w / h < 0.9 ? 1.4 : 0.4, 0);
     this.camera.updateProjectionMatrix();
