@@ -444,6 +444,9 @@ class Noodle {
   private eyes: Record<EyeMode, Object3D[]> = { lid: [], wide: [], line: [], shades: [] };
   private mouth: Mesh;
   private mouthO: Mesh;
+  private mouthSmirk: Mesh;
+  private mouthGrin: Mesh;
+  private shades!: Group;
   private glow: Mesh;
   private pupils: Mesh[] = [];
   mood: Mood = 'idle';
@@ -527,13 +530,29 @@ class Noodle {
     const bridge = new Mesh(new BoxGeometry(0.2, 0.008, 0.01), mats.black);
     bridge.position.set(0, ey + 0.014, ez + 0.01);
     shades.add(bridge);
+    // een glimlijntje op de glazen
+    for (const sx of [-1, 1]) {
+      const shine = new Mesh(new BoxGeometry(0.03, 0.004, 0.002), mats.white);
+      shine.position.set(sx * 0.055 - 0.012, ey + 0.01, ez + 0.019);
+      shine.rotation.z = 0.5;
+      shades.add(shine);
+    }
     this.inner.add(shades);
-    this.eyes.shades.push(shades);
+    this.shades = shades;
+    const mz = Math.sqrt(r * r) - 0.002;
+    const my = NOODLE_H * 0.645;
     this.mouth = new Mesh(new BoxGeometry(0.022, 0.005, 0.008), mats.black);
-    this.mouth.position.set(0, NOODLE_H * 0.645, Math.sqrt(r * r) - 0.002);
+    this.mouth.position.set(0, my, mz);
     this.mouthO = new Mesh(new TorusGeometry(0.008, 0.0035, 6, 14), mats.black);
     this.mouthO.position.copy(this.mouth.position);
-    this.inner.add(this.mouth, this.mouthO);
+    // zelfzekere scheve grijns
+    this.mouthSmirk = new Mesh(new TorusGeometry(0.018, 0.0035, 6, 16, Math.PI * 0.75), mats.black);
+    this.mouthSmirk.position.set(0.012, my + 0.008, mz - 0.002);
+    this.mouthSmirk.rotation.z = Math.PI + 0.55;
+    this.mouthGrin = new Mesh(new TorusGeometry(0.026, 0.0045, 6, 18, Math.PI), mats.black);
+    this.mouthGrin.position.set(0, my + 0.012, mz - 0.003);
+    this.mouthGrin.rotation.z = Math.PI;
+    this.inner.add(this.mouth, this.mouthO, this.mouthSmirk, this.mouthGrin);
     this.glow = new Mesh(new PlaneGeometry(0.7, 0.7), mats.lime);
     this.glow.rotation.x = -Math.PI / 2;
     this.glow.position.y = 0.01;
@@ -546,10 +565,23 @@ class Noodle {
     this.setMood('idle');
   }
 
+  /** Bril: 'down' = op de neus (standaard), 'up' = op het voorhoofd (verbaasd), 'crooked' = scheef (KO). */
+  private face(shades: 'down' | 'up' | 'crooked', eyes: EyeMode | 'none', mouth: 'smirk' | 'grin' | 'o' | 'flat') {
+    for (const [k, list] of Object.entries(this.eyes)) list.forEach((o) => (o.visible = k === eyes));
+    this.shades.visible = true;
+    this.shades.position.set(0, shades === 'up' ? 0.075 : shades === 'crooked' ? -0.012 : 0, shades === 'up' ? -0.012 : 0);
+    this.shades.rotation.set(shades === 'up' ? -0.35 : 0, 0, shades === 'crooked' ? 0.28 : 0);
+    this.mouth.visible = mouth === 'flat';
+    this.mouthO.visible = mouth === 'o';
+    this.mouthSmirk.visible = mouth === 'smirk';
+    this.mouthGrin.visible = mouth === 'grin';
+  }
+
   private eyeMode(m: EyeMode) {
-    for (const [k, list] of Object.entries(this.eyes)) list.forEach((o) => (o.visible = k === m));
-    this.mouthO.visible = m === 'wide';
-    this.mouth.visible = m !== 'wide';
+    // compat: oude standen vertalen naar bril + mond
+    if (m === 'wide') this.face('up', 'wide', 'o');
+    else if (m === 'line') this.face('crooked', 'none', 'flat');
+    else this.face('down', 'none', 'smirk');
   }
 
   setMood(m: Mood) {
@@ -572,16 +604,16 @@ class Noodle {
         this.sqV -= 3;
         break;
       case 'strain':
-        this.eyeMode('line');
+        this.face('down', 'none', 'flat');
         this.sqT = -0.12;
         break;
       case 'happy':
-        this.eyeMode('lid');
+        this.face('down', 'none', 'grin');
         this.glowT = 0.9;
         this.hopV = 2.6;
         break;
       case 'cool':
-        this.eyeMode('shades');
+        this.face('down', 'none', 'grin');
         this.glowT = 1;
         this.hopV = 3;
         this.tilt = 0.1;
@@ -1431,4 +1463,40 @@ export function renderWeightIcons(w = 184, h = 136): string[] {
   r.dispose();
   r.forceContextLoss();
   return out;
+}
+
+/** Portret van Noodle (met bril) als PNG-data-URL, voor het portaal en andere schermen. */
+export function renderNoodlePortrait(w = 420, h = 560, mood: Mood = 'idle'): string {
+  const canvas = document.createElement('canvas');
+  const r = new WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  r.setSize(w, h, false);
+  r.outputColorSpace = SRGBColorSpace;
+  r.toneMapping = ACESFilmicToneMapping;
+  r.toneMappingExposure = 1.1;
+  const scene = new Scene();
+  const pm = new PMREMGenerator(r);
+  scene.environment = pm.fromScene(new RoomEnvironment(), 0.03).texture;
+  pm.dispose();
+  scene.add(new HemisphereLight(0xe8e0ff, 0x120c22, 0.6));
+  const key = new DirectionalLight(0xffffff, 2.4);
+  key.position.set(-2, 4, 4);
+  const rimL = new DirectionalLight(0xb79cff, 2.4);
+  rimL.position.set(-4, 2, -3);
+  const rimR = new DirectionalLight(0x7ee8e2, 2);
+  rimR.position.set(4, 2, -2);
+  scene.add(key, rimL, rimR);
+  const n = new Noodle(new Mats());
+  n.setMood(mood);
+  n.group.position.set(0, 0, 0);
+  n.group.rotation.y = -0.3;
+  n.sync();
+  scene.add(n.group);
+  const cam = new PerspectiveCamera(24, w / h, 0.01, 20);
+  cam.position.set(0, NOODLE_H * 0.62, 2.6);
+  cam.lookAt(0, NOODLE_H * 0.47, 0);
+  r.render(scene, cam);
+  const url = canvas.toDataURL('image/png');
+  r.dispose();
+  r.forceContextLoss();
+  return url;
 }

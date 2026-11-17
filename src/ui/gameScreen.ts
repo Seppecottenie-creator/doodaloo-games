@@ -13,6 +13,7 @@ import { confetti } from './confetti';
 import { announce, h, reducedMotion, tween } from './dom';
 import { soundButton } from './common';
 import { Bubble } from './bubble';
+import { barcode, spinBadge, sticker, ticker } from './decor';
 
 export interface GameScreenOpts {
   session: Session;
@@ -54,7 +55,39 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   const panA = h('span', { class: 'stage-label mono left' }, 'PAN A · LOCKED');
   const panB = h('span', { class: 'stage-label mono right' }, 'PAN B · 0 ITEMS');
   const credit = h('p', { class: 'credit' });
-  const stage = h('div', { class: 'stage' }, canvas, panA, panB, hint, credit, intro);
+  const peek = sticker('NO PEEKING', 's-pink peek', '--r:7deg');
+  const stage = h(
+    'div',
+    { class: 'stage' },
+    canvas,
+    h('span', { class: 'ruler', 'aria-hidden': 'true' }),
+    h('span', { class: 'corner tl', 'aria-hidden': 'true' }),
+    h('span', { class: 'corner tr', 'aria-hidden': 'true' }),
+    h('span', { class: 'corner bl', 'aria-hidden': 'true' }),
+    h('span', { class: 'corner br', 'aria-hidden': 'true' }),
+    spinBadge('WEIGH IT ✦ WEIGH IT ✦ WEIGH IT ✦ ', '⚖', 'stage-badge'),
+    peek,
+    panA,
+    panB,
+    hint,
+    credit,
+    intro,
+  );
+  // info-band onder de header
+  const tickHost = h('div', { class: 'game-ticker' });
+  // spec-kaart en logboek (alleen op brede schermen zichtbaar)
+  const spec = h('dl', { class: 'spec' });
+  const logList = h('ol', { class: 'log mono' });
+  const extra = h(
+    'aside',
+    { class: 'extra' },
+    h('section', { class: 'panel' }, h('header', { class: 'panel-head mono' }, h('span', null, 'SPEC SHEET'), barcode('WGS')), spec),
+    h('section', { class: 'panel' }, h('header', { class: 'panel-head mono' }, h('span', null, 'LOG'), h('span', { class: 'rec' }, '● REC')), logList),
+  );
+  const log = (text: string, cls = '') => {
+    logList.prepend(h('li', { class: cls }, h('span', { class: 'log-t' }, new Date().toTimeString().slice(0, 8)), ' ', text));
+    while (logList.children.length > 7) logList.lastElementChild!.remove();
+  };
   const bubble = new Bubble(stage);
 
   const totalEl = h('output', { class: 'total' }, '0 g');
@@ -89,7 +122,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   const sheet = h('div', { class: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': 'sheet-score' });
   const bottom = h('div', { class: 'bottom' }, tray, actions, sheet);
 
-  const screen = h('main', { class: 'screen game' }, top, card, stage, readout, bottom);
+  const screen = h('main', { class: 'screen game' }, top, tickHost, card, stage, readout, bottom, extra);
   root.replaceChildren(screen);
 
   // ---------- balans ----------
@@ -186,6 +219,21 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     void card.offsetWidth;
     card.classList.add('enter');
     canvas.setAttribute('aria-label', `${o.name}. ${t.game.locked}`);
+    const dots = '●'.repeat(o.difficulty) + '○'.repeat(5 - o.difficulty);
+    const src = o.source ? new URL(o.source).hostname.replace('www.', '') : '—';
+    tickHost.replaceChildren(
+      ticker([`ROUND ${s.round + 1}/${s.objects.length}`, `${(o.category ?? 'object').toUpperCase()}`, `DIFFICULTY ${dots}`, o.fictional ? `FICTIONAL · ${(o.franchise ?? '').toUpperCase()}` : 'REAL THING', 'PAN A LOCKED', 'NOODLE IS WATCHING', `SCORE ${s.total}`]),
+    );
+    const row = (k: string, v: string | Node) => [h('dt', { class: 'mono' }, k), h('dd', null, v)];
+    spec.replaceChildren(
+      ...row('SUBJECT', o.name),
+      ...row('TYPE', o.fictional ? 'Fictional' : 'Real'),
+      ...row('CATEGORY', o.franchise ?? o.category ?? '—'),
+      ...row('DIFFICULTY', h('span', { class: 'dots' }, dots)),
+      ...row('SOURCE', src),
+      ...row('ROUND', `${s.round + 1} / ${s.objects.length}`),
+    );
+    log(`NEW SUBJECT: ${o.name.toUpperCase()}`, 'hl');
     bubble.hide();
     scale.reset();
     shownTotal = 0;
@@ -218,6 +266,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     }
     scale.addWeight(idx, from);
     floatDelta(`+${weightLabel(WEIGHTS[idx])}`, true);
+    log(`+ ${weightLabel(WEIGHTS[idx])}`, 'plus');
     renderTray();
     renderTotal();
     armIdle();
@@ -231,6 +280,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     if (!s.remove(idx)) return;
     if (!viaScale) scale.removeOne(idx);
     floatDelta(`−${weightLabel(WEIGHTS[idx])}`, false);
+    log(`− ${weightLabel(WEIGHTS[idx])}`, 'minus');
     sfx.lift();
     buzz(5);
     announce(t.game.removedWeight(weightLabel(WEIGHTS[idx])));
@@ -382,6 +432,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     renderTray();
     renderTotal();
     if (Math.random() < 0.5) say(pick(CLEARED), 1600);
+    log('PAN B CLEARED', 'minus');
   });
 
   quit.addEventListener('click', () => opts.onQuit());
@@ -399,13 +450,17 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     sfx.lockClick();
     buzz(10);
     screen.classList.add('weighing');
+    peek.classList.add('gone');
+    log(`WEIGHED · ${formatGrams(result.guess)} · ${result.score}/100`, 'hl');
     later(260, () => {
       scale.unlock(tilt);
       sfx.creak(Math.min(1, Math.abs(tilt) / 22));
     });
     later(1150, () => {
       scale.setMood?.(moodFor(result.score));
-      say(roastLine(result), 60000);
+      const line = roastLine(result);
+      say(line, 60000);
+      log(`NOODLE: “${line}”`, 'roast');
     });
     later(1500, () => showReveal(result));
   });
@@ -496,6 +551,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
       sheet.classList.remove('open');
       sheet.hidden = true;
       screen.classList.remove('weighing');
+      peek.classList.remove('gone');
       bubble.hide();
       if (s.next()) {
         addsThisRound = 0;
