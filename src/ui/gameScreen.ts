@@ -280,7 +280,6 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   });
 
   quit.addEventListener('click', () => {
-    if (s.phase === 'placing' && s.guess > 0 && !confirm(t.game.quitConfirm)) return;
     opts.onQuit();
   });
 
