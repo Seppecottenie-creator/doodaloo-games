@@ -1,136 +1,237 @@
 /**
- * Shady: raad het voorwerp aan zijn schaduw.
- * Elke ronde: een silhouet dat in drie stappen "meer licht" krijgt. Hoe vroeger juist, hoe meer punten.
+ * Shady: één van vier schaduwen is echt.
+ * Een zwevend blokbeeld (polycube) draait rond. Kies de enige schaduw die het kan werpen, vanuit om het even welke kant.
+ * De lokvogels zijn schaduwen van bijna-identieke beelden (één blokje verplaatst). Alles is gegenereerd: eindeloos, nooit hetzelfde.
  */
 import { hashString, mulberry32 } from '../game/rng';
-import type { GameObject } from '../game/types';
 
-export const SHADY_ROUNDS = 5;
-export const SHADY_OPTIONS = 4;
-/** Punten voor een juist antwoord bij hint-stap 0, 1, 2. Fout = 0. */
-export const STAGE_POINTS = [100, 60, 30] as const;
-export const SHADY_MAX = SHADY_ROUNDS * STAGE_POINTS[0];
+export type Cube = [number, number, number];
+export type Cell = [number, number];
 
-export interface ShadyRound {
-  answer: GameObject;
-  options: GameObject[];
-  /** Waar de eerste, ingezoomde uitsnede op mikt (0..1). */
-  focus: { x: number; y: number };
-  /** Draaiing van de eerste schaduw in graden. */
-  tilt: number;
+export interface Puzzle {
+  cubes: Cube[];
+  /** grootte van het rooster (3 of 4) */
+  size: number;
+  /** vier schaduwen, elk een lijst roostercellen */
+  options: Cell[][];
+  answer: number;
+  /** as waarlangs de echte schaduw valt (0 = x, 1 = y, 2 = z) */
+  axis: number;
 }
 
-export interface ShadyResult {
-  objectId: string;
-  /** hint-stap waarop geantwoord werd (0..2) */
-  stage: number;
-  correct: boolean;
-  score: number;
+export interface Level {
+  cubes: number;
+  size: number;
 }
 
-export function shadyScore(stage: number, correct: boolean): number {
-  if (!correct) return 0;
-  return STAGE_POINTS[Math.max(0, Math.min(STAGE_POINTS.length - 1, stage))];
+/** Moeilijkheid stijgt met het aantal juiste antwoorden in deze run. */
+export function levelFor(solved: number): Level {
+  if (solved < 3) return { cubes: 4, size: 3 };
+  if (solved < 7) return { cubes: 5, size: 3 };
+  if (solved < 12) return { cubes: 6, size: 3 };
+  if (solved < 18) return { cubes: 7, size: 4 };
+  if (solved < 26) return { cubes: 8, size: 4 };
+  return { cubes: 10, size: 4 };
 }
 
-/** Alleen voorwerpen met een uitgeknipte foto geven een schaduw. */
-export function shadowPool(pool: GameObject[]): GameObject[] {
-  return pool.filter((o) => !!o.image).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+// ---------------- tijd ----------------
+export const START_TIME = 40;
+export const MAX_TIME = 60;
+export const WRONG_PENALTY = 7;
+/** Bonus per juist antwoord: royaal in het begin, krapper naarmate je verder komt. */
+export function timeBonus(solved: number): number {
+  return Math.max(2.5, 5 - solved * 0.1);
 }
 
-function shuffle<T>(arr: T[], rnd: () => number): T[] {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+// ---------------- geometrie ----------------
+const key = (c: number[]) => c.join(',');
+const NB: Cube[] = [
+  [1, 0, 0],
+  [-1, 0, 0],
+  [0, 1, 0],
+  [0, -1, 0],
+  [0, 0, 1],
+  [0, 0, -1],
+];
 
-/**
- * Vijf rondes met verschillende categorieën (zo komen er geen vijf ballen na elkaar),
- * en lokvogels uit andere categorieën dan het antwoord (twee ronde ballen als keuze is oneerlijk).
- */
-export function buildRounds(pool: GameObject[], rnd: () => number, avoid: Set<string> = new Set()): ShadyRound[] {
-  const src = shadowPool(pool);
-  const order = shuffle(src, rnd).sort((a, b) => Number(avoid.has(a.id)) - Number(avoid.has(b.id)));
-  const picked: GameObject[] = [];
-  const cats = new Set<string>();
-  for (const o of order) {
-    if (picked.length >= SHADY_ROUNDS) break;
-    const c = o.category ?? o.id;
-    if (cats.has(c)) continue;
-    cats.add(c);
-    picked.push(o);
-  }
-  // te weinig categorieën: vul aan met wat overblijft
-  for (const o of order) {
-    if (picked.length >= SHADY_ROUNDS) break;
-    if (!picked.includes(o)) picked.push(o);
-  }
-  return picked.map((answer) => {
-    const decoyPool = shuffle(
-      src.filter((o) => o.id !== answer.id && (o.category ?? '') !== (answer.category ?? '-')),
-      rnd,
-    );
-    const decoys: GameObject[] = [];
-    const used = new Set<string>();
-    for (const d of decoyPool) {
-      if (decoys.length >= SHADY_OPTIONS - 1) break;
-      const c = d.category ?? d.id;
-      if (used.has(c)) continue; // lokvogels ook onderling verschillend
-      used.add(c);
-      decoys.push(d);
+export function connected(cubes: Cube[]): boolean {
+  if (cubes.length <= 1) return true;
+  const set = new Set(cubes.map(key));
+  const seen = new Set([key(cubes[0])]);
+  const stack = [cubes[0]];
+  while (stack.length) {
+    const [x, y, z] = stack.pop()!;
+    for (const [dx, dy, dz] of NB) {
+      const k = key([x + dx, y + dy, z + dz]);
+      if (set.has(k) && !seen.has(k)) {
+        seen.add(k);
+        stack.push([x + dx, y + dy, z + dz]);
+      }
     }
-    for (const d of decoyPool) if (decoys.length < SHADY_OPTIONS - 1 && !decoys.includes(d)) decoys.push(d);
-    return {
-      answer,
-      options: shuffle([answer, ...decoys], rnd),
-      focus: { x: 0.3 + rnd() * 0.4, y: 0.3 + rnd() * 0.4 },
-      tilt: (rnd() < 0.5 ? -1 : 1) * (20 + rnd() * 50),
-    };
-  });
+  }
+  return seen.size === cubes.length;
 }
 
-export function dailyRounds(pool: GameObject[], day: string): ShadyRound[] {
-  return buildRounds(pool, mulberry32(hashString(`shady:${day}`)));
+const inside = (c: Cube, size: number) => c.every((v) => v >= 0 && v < size);
+
+function freeNeighbours(cubes: Cube[], size: number): Cube[] {
+  const set = new Set(cubes.map(key));
+  const out = new Map<string, Cube>();
+  for (const [x, y, z] of cubes)
+    for (const [dx, dy, dz] of NB) {
+      const c: Cube = [x + dx, y + dy, z + dz];
+      if (inside(c, size) && !set.has(key(c))) out.set(key(c), c);
+    }
+  return [...out.values()];
 }
 
-export function shadySquare(r: ShadyResult): string {
-  if (!r.correct) return '🟥';
-  return r.stage === 0 ? '🟩' : r.stage === 1 ? '🟨' : '🟧';
+/** Groei een verbonden beeld van n blokjes. */
+export function grow(rnd: () => number, n: number, size: number): Cube[] {
+  const m = Math.floor(size / 2);
+  const cubes: Cube[] = [[m, m, m]];
+  while (cubes.length < n) {
+    const free = freeNeighbours(cubes, size);
+    cubes.push(free[Math.floor(rnd() * free.length)]);
+  }
+  return cubes;
 }
 
-export function shadyVerdict(total: number): string {
-  if (total >= 450) return 'You see in the dark. Unsettling.';
-  if (total >= 340) return 'Sharp eyes. Slightly creepy.';
-  if (total >= 220) return 'You squinted. It mostly worked.';
-  if (total >= 100) return 'Lights on next time, maybe.';
-  return 'You’d lose a staring contest with a lamp.';
+/** Schaduw langs een as: de cellen die het beeld op de muur bedekt. */
+export function project(cubes: Cube[], axis: number): Cell[] {
+  const m = new Map<string, Cell>();
+  for (const [x, y, z] of cubes) {
+    const c: Cell = axis === 0 ? [z, y] : axis === 1 ? [x, z] : [x, y];
+    m.set(key(c), c);
+  }
+  return [...m.values()];
 }
 
-const RIGHT = [
-  ['In the dark? Show-off.', 'Called it from a blob. Respect.', 'Bat vision unlocked.'],
-  ['Needed a bit of light. Fine.', 'Got there. Eventually.', 'Solid squint.'],
-  ['Took the floodlights, but sure.', 'You needed the full shape. Noted.', 'Barely. But it counts.'],
+const DIHEDRAL: ((c: Cell) => Cell)[] = [
+  ([u, v]) => [u, v],
+  ([u, v]) => [-v, u],
+  ([u, v]) => [-u, -v],
+  ([u, v]) => [v, -u],
+  ([u, v]) => [-u, v],
+  ([u, v]) => [u, -v],
+  ([u, v]) => [v, u],
+  ([u, v]) => [-v, -u],
 ];
-const WRONG = [
-  'That’s not even the same shape, mate.',
-  'Confidently, spectacularly wrong.',
-  'The shadow is embarrassed for you.',
-  'Wrong. The lights were ON.',
-  'Did you guess with your elbow?',
-];
 
-export function shadyLine(r: ShadyResult, rnd: () => number = Math.random): string {
-  const list = r.correct ? RIGHT[Math.min(2, r.stage)] : WRONG;
-  return list[Math.floor(rnd() * list.length)];
+export function normalize(cells: Cell[]): Cell[] {
+  const mu = Math.min(...cells.map((c) => c[0]));
+  const mv = Math.min(...cells.map((c) => c[1]));
+  return cells.map(([u, v]) => [u - mu, v - mv] as Cell).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
 }
 
-export function shadyShare(number: number | null, results: ShadyResult[]): string {
-  const total = results.reduce((s, r) => s + r.score, 0);
-  return [
-    number === null ? `🕶 Shady (free play) — ${total}/${SHADY_MAX}` : `🕶 Shady #${number} — ${total}/${SHADY_MAX}`,
-    results.map(shadySquare).join(''),
-  ].join('\n');
+/** Dezelfde schaduw, gedraaid of gespiegeld, geeft dezelfde sleutel. */
+export function canon(cells: Cell[]): string {
+  return DIHEDRAL.map((t) => normalize(cells.map(t)).map(key).join(';')).sort()[0];
+}
+
+export function transform(cells: Cell[], t: number): Cell[] {
+  return normalize(cells.map(DIHEDRAL[t % 8]));
+}
+
+/** Verplaats één blokje: het beeld blijft verbonden maar de schaduw verandert subtiel. */
+export function mutate(cubes: Cube[], size: number, rnd: () => number): Cube[] | null {
+  for (let tries = 0; tries < 30; tries++) {
+    const i = Math.floor(rnd() * cubes.length);
+    const rest = cubes.filter((_, j) => j !== i);
+    if (!connected(rest)) continue;
+    const free = freeNeighbours(rest, size).filter((c) => key(c) !== key(cubes[i]));
+    if (!free.length) continue;
+    return [...rest, free[Math.floor(rnd() * free.length)]];
+  }
+  return null;
+}
+
+export function makePuzzle(rnd: () => number, level: Level): Puzzle {
+  for (;;) {
+    const cubes = grow(rnd, level.cubes, level.size);
+    const truth = new Set([0, 1, 2].map((a) => canon(project(cubes, a))));
+    const axis = Math.floor(rnd() * 3);
+    const real = project(cubes, axis);
+    if (real.length < 3) continue;
+    const decoys: Cell[][] = [];
+    const used = new Set(truth);
+    for (let tries = 0; tries < 200 && decoys.length < 3; tries++) {
+      const m = mutate(cubes, level.size, rnd);
+      if (!m) continue;
+      // liefst dezelfde as als het echte antwoord: zo lijken ze het meest op elkaar
+      const axes = [axis, (axis + 1) % 3, (axis + 2) % 3];
+      for (const a of axes) {
+        const p = project(m, a);
+        const c = canon(p);
+        if (used.has(c)) continue;
+        // even groot als het echte antwoord, of hooguit één cel verschil
+        if (Math.abs(p.length - real.length) > 1) continue;
+        used.add(c);
+        decoys.push(p);
+        break;
+      }
+    }
+    if (decoys.length < 3) continue;
+    const answer = Math.floor(rnd() * 4);
+    const pool = decoys.slice();
+    const options: Cell[][] = [];
+    for (let i = 0; i < 4; i++) options.push(transform(i === answer ? real : pool.pop()!, Math.floor(rnd() * 8)));
+    return { cubes, size: level.size, options, answer, axis };
+  }
+}
+
+/** Een run: puzzels volgen elkaar op met één generator, dus de dagrun is voor iedereen dezelfde reeks. */
+export class Run {
+  private rnd: () => number;
+  solved = 0;
+  wrong = 0;
+  streak = 0;
+  bestStreak = 0;
+  time = START_TIME;
+  current: Puzzle;
+
+  constructor(seed: string | number) {
+    this.rnd = mulberry32(typeof seed === 'number' ? seed : hashString(seed));
+    this.current = makePuzzle(this.rnd, levelFor(0));
+  }
+
+  /** Antwoord; geeft terug of het juist was. Daarna staat de volgende puzzel klaar. */
+  answer(i: number): boolean {
+    const ok = i === this.current.answer;
+    if (ok) {
+      this.time = Math.min(MAX_TIME, this.time + timeBonus(this.solved));
+      this.solved++;
+      this.streak++;
+      this.bestStreak = Math.max(this.bestStreak, this.streak);
+    } else {
+      this.time = Math.max(0, this.time - WRONG_PENALTY);
+      this.wrong++;
+      this.streak = 0;
+    }
+    this.current = makePuzzle(this.rnd, levelFor(this.solved));
+    return ok;
+  }
+
+  tick(dt: number) {
+    this.time = Math.max(0, this.time - dt);
+  }
+
+  get over() {
+    return this.time <= 0;
+  }
+}
+
+export const dailySeed = (day: string) => `shady2:${day}`;
+
+export function shadyVerdict(solved: number): string {
+  if (solved >= 30) return 'You see in four dimensions. Seek help.';
+  if (solved >= 20) return 'Spatial genius. Mildly terrifying.';
+  if (solved >= 12) return 'Sharp. The lamp respects you.';
+  if (solved >= 6) return 'Decent. Your brain did a little spin.';
+  if (solved >= 2) return 'Your mental rotation needs oil.';
+  return 'The lamp died of boredom.';
+}
+
+export function shadyShare(number: number | null, solved: number, bestStreak: number): string {
+  const bulbs = '💡'.repeat(Math.min(10, Math.ceil(solved / 3))) || '🌑';
+  return [number === null ? `🕶 Shady (endless) — ${solved} shadows` : `🕶 Shady #${number} — ${solved} shadows`, `${bulbs}  best streak ${bestStreak}`].join('\n');
 }

@@ -1,46 +1,28 @@
-import objects from '../../data/objects.json';
 import * as sfx from '../audio/sfx';
 import { buzz } from '../game/haptics';
 import { dayString, msUntilNextDay, puzzleNumber } from '../game/seed';
-import type { GameObject } from '../game/types';
-import {
-  buildRounds,
-  dailyRounds,
-  SHADY_MAX,
-  shadyLine,
-  shadyScore,
-  shadyShare,
-  shadySquare,
-  shadyVerdict,
-  STAGE_POINTS,
-  type ShadyResult,
-  type ShadyRound,
-} from '../shady/logic';
 import { shareResult } from '../game/share';
+import { dailySeed, MAX_TIME, Run, shadyShare, shadyVerdict, timeBonus, WRONG_PENALTY , makePuzzle, levelFor } from '../shady/logic';
+import { shadowSvg } from '../shady/shadowSvg';
+import type { SculptureView } from '../shady/SculptureView';
+import { mulberry32 } from '../game/rng';
 import { formatCountdown, soundButton } from './common';
 import { confetti } from './confetti';
 import { announce, h } from './dom';
 
-const POOL = objects as GameObject[];
-const KEY = 'shady:v1';
-const BASE = import.meta.env.BASE_URL;
-
+const KEY = 'shady:v2';
 interface ShadyStore {
-  daily: Record<string, { results: ShadyResult[]; done: boolean }>;
-  practice: { played: number; best: number; recent: string[] };
+  daily: Record<string, { solved: number; bestStreak: number }>;
+  best: number;
+  runs: number;
 }
 function loadStore(): ShadyStore {
-  const d: ShadyStore = { daily: {}, practice: { played: 0, best: 0, recent: [] } };
   try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const p = JSON.parse(raw) as Partial<ShadyStore>;
-      return { daily: p.daily ?? {}, practice: { ...d.practice, ...p.practice } };
-    }
+    const p = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<ShadyStore>;
+    return { daily: p.daily ?? {}, best: p.best ?? 0, runs: p.runs ?? 0 };
   } catch {
-    /* geen opslag: gewoon spelen */
+    return { daily: {}, best: 0, runs: 0 };
   }
-  return d;
 }
 function saveStore(s: ShadyStore) {
   try {
@@ -50,8 +32,21 @@ function saveStore(s: ShadyStore) {
   }
 }
 
-/** "Football (size 5)" → "Football" */
-const shortName = (o: GameObject) => o.name.replace(/\s*\(.*\)\s*$/, '');
+let viewMod: Promise<typeof import('../shady/SculptureView') | null> | null = null;
+function loadView() {
+  viewMod ??= import('../shady/SculptureView').catch(() => null);
+  return viewMod;
+}
+async function makeView(canvas: HTMLCanvasElement): Promise<SculptureView | null> {
+  const m = await loadView();
+  if (!m) return null;
+  try {
+    return new m.SculptureView(canvas);
+  } catch {
+    return null;
+  }
+}
+
 const pad = (n: number) => String(n).padStart(3, '0');
 
 export interface ShadyOpts {
@@ -59,45 +54,51 @@ export interface ShadyOpts {
 }
 
 export function shadyScreen(root: HTMLElement, opts: ShadyOpts): () => void {
+  const day = dayString();
+  const n = puzzleNumber(day);
+  let view: SculptureView | null = null;
+  let dead = false;
+  let raf = 0;
   const timers: number[] = [];
   let keyHandler: ((e: KeyboardEvent) => void) | null = null;
-  const later = (f: () => void, ms: number) => timers.push(window.setTimeout(f, ms));
   const setKeys = (f: ((e: KeyboardEvent) => void) | null) => {
     if (keyHandler) window.removeEventListener('keydown', keyHandler);
     keyHandler = f;
     if (f) window.addEventListener('keydown', f);
   };
-
-  const day = dayString();
-  const n = puzzleNumber(day);
+  const stopView = () => {
+    view?.destroy();
+    view = null;
+    cancelAnimationFrame(raf);
+    timers.forEach(clearTimeout);
+    timers.length = 0;
+  };
 
   const back = h('button', { class: 'sh-back', type: 'button', 'aria-label': 'Back to doodaloo' }, '← doodaloo');
   back.addEventListener('click', opts.onPortal);
   const top = h('header', { class: 'sh-top' }, back, h('span', { class: 'mono sh-tag' }, `SHADY · #${pad(n)}`), soundButton());
   const body = h('div', { class: 'sh-body' });
-  const screen = h('main', { class: 'screen shady' }, top, body);
-  root.replaceChildren(screen);
+  root.replaceChildren(h('main', { class: 'screen shady' }, top, body));
 
   // ---------------- intro ----------------
   function intro() {
+    stopView();
     setKeys(null);
     const st = loadStore();
-    const rec = st.daily[day];
+    const today = st.daily[day];
     const cd = h('span', null, formatCountdown(msUntilNextDay()));
     const iv = window.setInterval(() => (cd.isConnected ? (cd.textContent = formatCountdown(msUntilNextDay())) : clearInterval(iv)), 1000);
 
-    const daily = h('button', { class: 'btn primary sh-cta', type: 'button' }, rec?.done ? 'See today’s result' : rec?.results.length ? 'Continue today’s' : `Play today’s #${pad(n)}`);
-    daily.addEventListener('click', () => (rec?.done ? end('daily', rec.results, dailyRounds(POOL, day)) : play('daily', dailyRounds(POOL, day), rec?.results ?? [])));
-    const free = h('button', { class: 'btn ghost', type: 'button' }, 'Free play');
-    free.addEventListener('click', () => {
-      const s = loadStore();
-      play('practice', buildRounds(POOL, Math.random, new Set(s.practice.recent)), []);
-    });
+    const daily = h('button', { class: 'btn primary sh-cta', type: 'button' }, today ? `Today: ${today.solved} shadows` : `Daily run #${pad(n)}`);
+    daily.addEventListener('click', () => (today ? end('daily', today.solved, today.bestStreak) : play('daily')));
+    const endless = h('button', { class: 'btn ghost', type: 'button' }, 'Endless');
+    endless.addEventListener('click', () => play('endless'));
 
-    // decoratieve schaduw in de hero
-    const demo = POOL.filter((o) => o.image);
-    const pickDemo = demo[Math.floor(Math.random() * demo.length)];
-    const art = h('div', { class: 'sh-wall sh-hero-wall', 'aria-hidden': 'true' }, h('img', { class: 'sh-obj', src: BASE + pickDemo.image, alt: '' }));
+    const canvas = h('canvas', { class: 'sh-canvas', 'aria-label': 'A floating block sculpture' });
+    // voorbeeld: het beeld en zijn echte schaduw naast elkaar
+    const demo = makePuzzle(mulberry32(Date.now() % 100000), levelFor(4));
+    const demoShadow = h('div', { class: 'sh-card demo', 'aria-hidden': 'true' });
+    demoShadow.innerHTML = shadowSvg(demo.options[demo.answer], demo.size);
 
     body.replaceChildren(
       h(
@@ -106,218 +107,221 @@ export function shadyScreen(root: HTMLElement, opts: ShadyOpts): () => void {
         h(
           'div',
           { class: 'sh-intro-text' },
-          h('span', { class: 'mono sh-kicker' }, 'DOODALOO GAME 02'),
+          h('span', { class: 'mono sh-kicker' }, 'DOODALOO GAME 02 · SPATIAL'),
           h('h1', { class: 'sh-title' }, 'Shady'),
-          h('p', { class: 'sh-lede' }, 'Name the thing from its shadow alone. Ask for more light if you must — it’ll cost you.'),
+          h('p', { class: 'sh-lede' }, 'A sculpture floats under the lamp. Four shadows on the wall. ', h('b', null, 'Only one is real'), ' — from any side. Find it before the lamp burns out.'),
           h(
-            'ol',
+            'ul',
             { class: 'sh-rules' },
-            h('li', null, h('b', null, `${STAGE_POINTS[0]}`), ' in the dark'),
-            h('li', null, h('b', null, `${STAGE_POINTS[1]}`), ' with a little light'),
-            h('li', null, h('b', null, `${STAGE_POINTS[2]}`), ' with the full shape'),
+            h('li', null, h('b', null, 'RIGHT'), ' +time'),
+            h('li', null, h('b', { class: 'bad' }, 'WRONG'), ` −${WRONG_PENALTY}s`),
+            h('li', null, h('b', null, 'DRAG'), ' to spin it'),
+            h('li', null, h('b', null, 'IT GETS'), ' nastier'),
           ),
-          h('div', { class: 'sh-actions' }, daily, free),
-          h('span', { class: 'mono sh-cd' }, 'NEW SHADOWS IN ', cd),
+          h('div', { class: 'sh-actions' }, daily, endless),
+          h('span', { class: 'mono sh-cd' }, st.best ? `PERSONAL BEST ${st.best} · ` : '', 'NEW DAILY RUN IN ', cd),
         ),
-        art,
+        h('div', { class: 'sh-demo' }, h('div', { class: 'sh-plinth' }, canvas), h('span', { class: 'mono sh-arrow' }, 'CASTS →'), demoShadow),
       ),
     );
+    void makeView(canvas).then((v) => {
+      if (dead || !canvas.isConnected) return v?.destroy();
+      view = v;
+      v?.setSculpture(demo.cubes, demo.size);
+    });
   }
 
   // ---------------- spel ----------------
-  function play(mode: 'daily' | 'practice', rounds: ShadyRound[], prev: ShadyResult[]) {
-    const results = prev.slice();
-    let idx = results.length;
-    if (idx >= rounds.length) return end(mode, results, rounds);
+  function play(mode: 'daily' | 'endless') {
+    stopView();
+    const run = new Run(mode === 'daily' ? dailySeed(day) : Math.floor(Math.random() * 2 ** 31));
+    if (mode === 'daily') {
+      // één poging per dag: meteen vastleggen, zodat herladen geen nieuwe kans geeft
+      const s = loadStore();
+      s.daily[day] = { solved: 0, bestStreak: 0 };
+      saveStore(s);
+    }
 
-    const total = () => results.reduce((s, r) => s + r.score, 0);
-    const pips = h('div', { class: 'sh-pips', 'aria-hidden': 'true' });
-    const totalEl = h('b', { class: 'sh-total' }, String(total()));
-    const roundEl = h('span', { class: 'mono' });
-    const hud = h('div', { class: 'sh-hud' }, roundEl, pips, h('span', { class: 'sh-score mono' }, 'SCORE ', totalEl));
+    const fill = h('i', { class: 'sh-lamp-fill' });
+    const timeEl = h('span', { class: 'mono sh-time' });
+    const solvedEl = h('b', { class: 'sh-solved' }, '0');
+    const streakEl = h('span', { class: 'mono sh-streak' });
+    const hud = h(
+      'div',
+      { class: 'sh-hud' },
+      h('div', { class: 'sh-count' }, solvedEl, h('span', { class: 'mono' }, 'SHADOWS')),
+      h('div', { class: 'sh-lamp', role: 'timer', 'aria-label': 'Time left' }, h('span', { class: 'sh-bulb', 'aria-hidden': 'true' }), h('div', { class: 'sh-lamp-bar' }, fill), timeEl),
+      streakEl,
+    );
+    const canvas = h('canvas', { class: 'sh-canvas', 'aria-label': 'The sculpture. Drag to spin it.' });
+    const float = h('span', { class: 'sh-float', 'aria-hidden': 'true' });
+    const plinth = h('div', { class: 'sh-plinth' }, canvas, float, h('span', { class: 'mono sh-hint' }, 'DRAG TO SPIN'));
+    const cards = h('div', { class: 'sh-cards', role: 'group', 'aria-label': 'Which shadow is real?' });
+    const prompt = h('p', { class: 'sh-prompt' }, 'Which shadow can it cast?');
+    body.replaceChildren(h('section', { class: 'sh-play' }, hud, h('div', { class: 'sh-stage' }, plinth, h('div', { class: 'sh-side' }, prompt, cards))));
 
-    const img = h('img', { class: 'sh-obj', alt: 'A mystery shadow' });
-    const wall = h('div', { class: 'sh-wall' }, h('span', { class: 'sh-beam', 'aria-hidden': 'true' }), img);
-    const meter = h('div', { class: 'sh-meter', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'));
-    const light = h('button', { class: 'btn ghost sh-light', type: 'button' });
-    const opts4 = h('div', { class: 'sh-options', role: 'group', 'aria-label': 'What is it?' });
-    const line = h('p', { class: 'sh-line', 'aria-live': 'polite' });
-    const fact = h('p', { class: 'sh-fact' });
-    const next = h('button', { class: 'btn primary sh-next', type: 'button', hidden: true });
-    const panel = h('div', { class: 'sh-panel' }, h('div', { class: 'sh-controls' }, meter, light), opts4, line, fact, next);
-    body.replaceChildren(h('section', { class: 'sh-play' }, hud, h('div', { class: 'sh-stage' }, wall, panel)));
+    let locked = false;
+    let paused = true;
 
-    let stage = 0;
-    let answered = false;
-    let round = rounds[idx];
-
-    const renderPips = () =>
-      pips.replaceChildren(
-        ...rounds.map((_, i) => h('span', { class: `sh-pip${i < results.length ? ' ' + (results[i].correct ? 'ok' : 'bad') : ''}${i === idx ? ' now' : ''}` })),
-      );
-
-    const applyStage = () => {
-      wall.dataset.stage = String(stage);
-      const { focus, tilt } = round;
-      const sc = [2.9, 1.6, 1][stage];
-      const rot = [tilt, tilt * 0.35, 0][stage];
-      img.style.transformOrigin = `${focus.x * 100}% ${focus.y * 100}%`;
-      img.style.transform = `scale(${sc}) rotate(${rot}deg)`;
-      [...meter.children].forEach((el, i) => el.classList.toggle('on', i <= stage));
-      light.disabled = stage >= 2 || answered;
-      light.textContent = stage >= 2 ? 'Full light' : `More light  −${STAGE_POINTS[stage] - STAGE_POINTS[stage + 1]}`;
-    };
-
-    const choose = (o: GameObject, btn: HTMLButtonElement) => {
-      if (answered) return;
-      answered = true;
-      const correct = o.id === round.answer.id;
-      const res: ShadyResult = { objectId: round.answer.id, stage, correct, score: shadyScore(stage, correct) };
-      results.push(res);
-      wall.classList.add('revealed');
-      img.style.transform = 'scale(1) rotate(0deg)';
-      img.alt = round.answer.name;
-      for (const b of opts4.querySelectorAll<HTMLButtonElement>('button')) {
-        b.disabled = true;
-        if (b.dataset.id === round.answer.id) b.classList.add('right');
-      }
-      if (!correct) btn.classList.add('wrong');
-      light.disabled = true;
-      totalEl.textContent = String(total());
-      line.textContent = `${correct ? `+${res.score}` : '0'} · ${shadyLine(res)}`;
-      line.className = `sh-line ${correct ? 'ok' : 'bad'}`;
-      fact.textContent = `It’s ${round.answer.name}. ${round.answer.funFact}`;
-      announce(`${correct ? 'Correct' : 'Wrong'}. It is ${round.answer.name}.`);
-      if (correct) {
-        sfx.jingle(stage === 0);
-        buzz(stage === 0 ? [20, 40, 20] : 20);
-        if (stage === 0) {
-          const r = wall.getBoundingClientRect();
-          confetti((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight, 90);
-        }
-      } else {
-        sfx.fail();
-        buzz([60, 30, 60]);
-      }
-      renderPips();
-      if (mode === 'daily') {
-        const s = loadStore();
-        s.daily[day] = { results: results.slice(), done: results.length >= rounds.length };
-        saveStore(s);
-      }
-      const last = results.length >= rounds.length;
-      next.hidden = false;
-      next.textContent = last ? 'See your score →' : 'Next shadow →';
-      next.focus({ preventScroll: true });
-    };
-
-    const load = () => {
-      round = rounds[idx];
-      stage = 0;
-      answered = false;
-      wall.classList.remove('revealed');
-      wall.classList.add('swap');
-      later(() => wall.classList.remove('swap'), 30);
-      img.src = BASE + round.answer.image;
-      img.alt = 'A mystery shadow';
-      roundEl.textContent = `SHADOW ${idx + 1}/${rounds.length}`;
-      line.textContent = 'What casts this shadow?';
-      line.className = 'sh-line';
-      fact.textContent = '';
-      next.hidden = true;
-      opts4.replaceChildren(
-        ...round.options.map((o, i) => {
-          const b = h('button', { class: 'sh-opt', type: 'button', 'data-id': o.id }, h('span', { class: 'mono sh-key' }, String(i + 1)), h('span', null, shortName(o)));
-          b.addEventListener('click', () => choose(o, b));
+    const render = () => {
+      const p = run.current;
+      view?.setSculpture(p.cubes, p.size);
+      cards.replaceChildren(
+        ...p.options.map((cells, i) => {
+          const b = h('button', { class: 'sh-card', type: 'button', 'aria-label': `Shadow ${i + 1}` }, h('span', { class: 'mono sh-key' }, String(i + 1)));
+          b.insertAdjacentHTML('beforeend', shadowSvg(cells, p.size));
+          b.addEventListener('click', () => choose(i));
           return b;
         }),
       );
-      applyStage();
-      renderPips();
+      cards.classList.remove('done');
+      locked = false;
+      paused = false;
     };
 
-    light.addEventListener('click', () => {
-      if (answered || stage >= 2) return;
-      stage++;
+    const showFloat = (txt: string, cls: string) => {
+      float.textContent = txt;
+      float.className = `sh-float ${cls}`;
+      void float.offsetWidth;
+      float.classList.add('go');
+    };
+
+    const choose = (i: number) => {
+      if (locked || run.over) return;
+      locked = true;
+      paused = true;
+      const p = run.current;
+      const bonus = timeBonus(run.solved);
+      const ok = run.answer(i);
+      const btns = [...cards.querySelectorAll<HTMLButtonElement>('.sh-card')];
+      btns[p.answer].classList.add('right');
+      cards.classList.add('done');
+      view?.showAxis(p.axis);
+      if (ok) {
+        btns[i].classList.add('pop');
+        showFloat(`+${bonus.toFixed(1)}s`, 'ok');
+        sfx.tick(run.streak);
+        if (run.streak > 0 && run.streak % 5 === 0) {
+          sfx.jingle(true);
+          const r = plinth.getBoundingClientRect();
+          confetti((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight, 70);
+        }
+        buzz(15);
+        announce('Right.');
+      } else {
+        btns[i].classList.add('wrong');
+        showFloat(`−${WRONG_PENALTY}s`, 'bad');
+        sfx.fail();
+        buzz([50, 30, 50]);
+        announce(`Wrong. It was shadow ${p.answer + 1}.`);
+      }
+      solvedEl.textContent = String(run.solved);
+      streakEl.textContent = run.streak >= 2 ? `${run.streak} IN A ROW` : '';
+      streakEl.classList.toggle('hot', run.streak >= 5);
+      updateLamp();
+      // even laten zien vanwaar de schaduw kwam, dan door
+      timers.push(window.setTimeout(() => (run.over ? finish() : render()), ok ? 650 : 1500));
+    };
+
+    const updateLamp = () => {
+      fill.style.transform = `scaleX(${run.time / MAX_TIME})`;
+      timeEl.textContent = `${run.time.toFixed(1)}s`;
+      hud.classList.toggle('low', run.time < 10);
+    };
+
+    let last = performance.now();
+    const loop = (now: number) => {
+      raf = requestAnimationFrame(loop);
+      const dt = Math.min(0.25, (now - last) / 1000);
+      last = now;
+      if (!paused && !document.hidden) {
+        run.tick(dt);
+        updateLamp();
+        if (run.over) {
+          paused = true;
+          locked = true;
+          finish();
+        }
+      }
+    };
+
+    const finish = () => {
+      cancelAnimationFrame(raf);
+      setKeys(null);
       sfx.whoosh();
-      buzz(10);
-      applyStage();
-    });
-    next.addEventListener('click', () => {
-      if (results.length >= rounds.length) return end(mode, results, rounds);
-      idx++;
-      load();
-    });
+      const s = loadStore();
+      s.runs++;
+      s.best = Math.max(s.best, run.solved);
+      if (mode === 'daily') s.daily[day] = { solved: run.solved, bestStreak: run.bestStreak };
+      saveStore(s);
+      body.classList.add('lights-out');
+      timers.push(
+        window.setTimeout(() => {
+          body.classList.remove('lights-out');
+          end(mode, run.solved, run.bestStreak);
+        }, 900),
+      );
+    };
+
     setKeys((e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const k = Number(e.key);
-      if (!answered && k >= 1 && k <= 4) {
-        const b = opts4.querySelectorAll<HTMLButtonElement>('button')[k - 1];
-        b?.click();
-      } else if (!answered && (e.key === 'l' || e.key === 'L')) light.click();
-      else if (answered && e.key === 'Enter' && document.activeElement !== next) next.click();
+      if (k >= 1 && k <= 4) choose(k - 1);
     });
-    load();
+
+    updateLamp();
+    void makeView(canvas).then((v) => {
+      if (dead || !canvas.isConnected) return v?.destroy();
+      view = v;
+      if (!v) plinth.append(h('p', { class: 'sh-nogl' }, 'Your browser can’t show 3D. Shady needs WebGL.'));
+      render();
+      last = performance.now();
+      raf = requestAnimationFrame(loop);
+    });
   }
 
   // ---------------- einde ----------------
-  function end(mode: 'daily' | 'practice', results: ShadyResult[], rounds: ShadyRound[]) {
+  function end(mode: 'daily' | 'endless', solved: number, bestStreak: number) {
+    stopView();
     setKeys(null);
-    const total = results.reduce((s, r) => s + r.score, 0);
-    if (mode === 'practice') {
-      const s = loadStore();
-      s.practice.played++;
-      s.practice.best = Math.max(s.practice.best, total);
-      s.practice.recent = [...rounds.map((r) => r.answer.id), ...s.practice.recent].slice(0, 12);
-      saveStore(s);
-    }
+    const st = loadStore();
     const shareBtn = h('button', { class: 'btn primary', type: 'button' }, 'Share');
     const note = h('span', { class: 'mono sh-note', 'aria-live': 'polite' });
     shareBtn.addEventListener('click', async () => {
-      const r = await shareResult(shadyShare(mode === 'daily' ? n : null, results));
+      const r = await shareResult(shadyShare(mode === 'daily' ? n : null, solved, bestStreak));
       note.textContent = r === 'copied' ? 'COPIED' : r === 'shared' ? 'SHARED' : '';
     });
-    const again = h('button', { class: 'btn ghost', type: 'button' }, 'Free play');
-    again.addEventListener('click', () => {
-      const s = loadStore();
-      play('practice', buildRounds(POOL, Math.random, new Set(s.practice.recent)), []);
-    });
+    const again = h('button', { class: 'btn ghost', type: 'button' }, mode === 'daily' ? 'Play endless' : 'Again');
+    again.addEventListener('click', () => play('endless'));
     const home = h('button', { class: 'btn ghost', type: 'button' }, 'Other games');
     home.addEventListener('click', opts.onPortal);
-
-    const byId = new Map(rounds.map((r) => [r.answer.id, r.answer]));
+    const isBest = solved > 0 && solved >= st.best;
     body.replaceChildren(
       h(
         'section',
         { class: 'sh-end' },
-        h('span', { class: 'mono sh-kicker' }, mode === 'daily' ? `SHADY #${pad(n)} · FINAL` : 'FREE PLAY · FINAL'),
-        h('div', { class: 'sh-big' }, h('b', null, String(total)), h('span', null, `/${SHADY_MAX}`)),
-        h('p', { class: 'sh-verdict' }, shadyVerdict(total)),
-        h('div', { class: 'sh-squares', 'aria-label': results.map((r) => (r.correct ? 'right' : 'wrong')).join(', ') }, results.map(shadySquare).join('')),
+        h('span', { class: 'mono sh-kicker' }, mode === 'daily' ? `SHADY #${pad(n)} · LAMP OUT` : 'ENDLESS · LAMP OUT'),
+        h('div', { class: 'sh-big' }, h('b', null, String(solved)), h('span', null, solved === 1 ? 'shadow' : 'shadows')),
+        h('p', { class: 'sh-verdict' }, shadyVerdict(solved)),
         h(
-          'ul',
-          { class: 'sh-list' },
-          ...results.map((r) => {
-            const o = byId.get(r.objectId);
-            return h(
-              'li',
-              { class: r.correct ? 'ok' : 'bad' },
-              o?.image ? h('img', { src: BASE + o.image, alt: '' }) : null,
-              h('span', null, o ? shortName(o) : r.objectId),
-              h('b', { class: 'mono' }, r.correct ? `+${r.score}` : '✕'),
-            );
-          }),
+          'div',
+          { class: 'sh-stats' },
+          h('div', null, h('b', null, String(bestStreak)), h('span', { class: 'mono' }, 'BEST STREAK')),
+          h('div', null, h('b', { class: isBest ? 'lime' : '' }, String(st.best)), h('span', { class: 'mono' }, isBest ? 'NEW BEST' : 'PERSONAL BEST')),
+          h('div', null, h('b', null, String(st.runs)), h('span', { class: 'mono' }, 'RUNS')),
         ),
         h('div', { class: 'sh-actions' }, shareBtn, again, home),
         note,
+        mode === 'daily' ? h('span', { class: 'mono sh-cd' }, 'SAME SCULPTURES FOR EVERYONE TODAY. COMPARE.') : null,
       ),
     );
-    if (total >= SHADY_MAX * 0.8) confetti(0.5, 0.3, 160);
+    if (isBest && solved >= 5) confetti(0.5, 0.3, 160);
   }
 
   intro();
   return () => {
+    dead = true;
+    stopView();
     setKeys(null);
-    timers.forEach(clearTimeout);
   };
 }
