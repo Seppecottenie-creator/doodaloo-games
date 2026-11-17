@@ -13,11 +13,20 @@ export function mountBackdrop() {
     h('span', { class: 'bd-blob b2' }),
     h('span', { class: 'bd-blob b3' }),
     h('span', { class: 'bd-grid' }),
+    h('span', { class: 'bd-spot' }),
     ...marks,
     h('span', { class: 'bd-coord mono tl' }, '51.2194° N · 4.4025° E'),
     h('span', { class: 'bd-coord mono br' }, 'DOODALOO / LAB 01'),
   );
   document.body.prepend(el);
+  // spotlight volgt de muis (alleen met een echte muis)
+  if (matchMedia('(pointer: fine)').matches) {
+    const spot = el.querySelector<HTMLElement>('.bd-spot')!;
+    window.addEventListener('pointermove', (e) => {
+      spot.style.setProperty('--mx', `${e.clientX}px`);
+      spot.style.setProperty('--my', `${e.clientY}px`);
+    });
+  }
 }
 
 /** Lopende tekstband. */
@@ -42,4 +51,10 @@ export function spinBadge(text: string, center: string, cls = ''): HTMLElement {
 /** Decoratieve barcode. */
 export function barcode(label: string): HTMLElement {
   return h('span', { class: 'barcode', 'aria-hidden': 'true' }, h('span', { class: 'bars' }), h('span', { class: 'mono' }, label));
+}
+
+/** Monogram (max. 2 initialen) i.p.v. emoji: strakker. */
+export function monogram(name: string): string {
+  const words = name.replace(/[()’'.]/g, '').split(/\s+/).filter((w) => /^[A-Za-zÀ-ÿ0-9]/.test(w));
+  return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '?').slice(0, 2)).toUpperCase();
 }

@@ -94,9 +94,9 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
     { class: 'home-card' },
     h('div', { class: 'card-head' }, h('h1', null, 'weeg', h('span', { class: 'accent' }, 'schaal')), h('p', { class: 'tagline' }, t.tagline), tabs),
     hero,
-    sticker('DAILY!', 's-lime', 'right:22px;top:24px;--r:9deg'),
-    sticker('NO ACCOUNT', 's-aqua', 'right:34px;top:64px;--r:-6deg'),
-    spinBadge('5 THINGS ✦ 1 SCALE ✦ 0 MERCY ✦ ', '⚖', 'home-badge'),
+    sticker('DAILY / 24H', 's-lime', 'right:22px;top:26px;--r:0deg'),
+    sticker('LOT 001', 's-aqua', 'right:22px;top:58px;--r:0deg'),
+    spinBadge('5 OBJECTS · 1 SCALE · 0 MERCY · ', '◆', 'home-badge'),
     h(
       'div',
       { class: 'card-foot' },

@@ -13,7 +13,7 @@ const NOODLE_LINES = [
   'I’m Noodle. I judge things.',
   'Sunglasses stay on. Indoors. Always.',
   'Pick a game. Disappoint me.',
-  'Yes, I’m a pill. No, you can’t swallow me.',
+  'I don’t do smiles. I do verdicts.',
   'More games coming. Probably. Maybe.',
 ];
 
@@ -57,7 +57,7 @@ export function portalScreen(root: HTMLElement, opts: PortalOpts): () => void {
       h('p', { class: 'p-lede' }, 'Tiny daily games. Big opinions. One very cool pill in sunglasses.'),
       h('div', { class: 'p-chips' }, h('span', { class: 'chip live' }, '● 1 LIVE'), h('span', { class: 'chip' }, '2 IN THE LAB'), h('span', { class: 'chip' }, 'FREE · NO ACCOUNT')),
     ),
-    h('div', { class: 'p-hero-art' }, noodle, say, spinBadge('NEW GAMES SOON ✦ NEW GAMES SOON ✦ ', '✦', 'p-badge'), sticker('100% ROAST', 's-lime', 'right:4%;top:6%;--r:8deg'), sticker('HE BITES', 's-pink', 'left:2%;bottom:14%;--r:-10deg')),
+    h('div', { class: 'p-hero-art' }, noodle, say, spinBadge('MORE GAMES IN DEVELOPMENT · ', '◆', 'p-badge'), sticker('CERTIFIED JUDGE', 's-lime', 'right:4%;top:6%;--r:0deg'), sticker('PROTOTYPE 0.4', 's-pink', 'left:2%;bottom:14%;--r:0deg')),
   );
 
   // Weegschaal-kaart met live balans
@@ -70,7 +70,7 @@ export function portalScreen(root: HTMLElement, opts: PortalOpts): () => void {
     'article',
     { class: 'g-card g-main' },
     h('div', { class: 'g-top' }, h('span', { class: 'chip live' }, '● LIVE'), h('span', { class: 'mono g-num' }, `GAME 01 · DAILY #${String(n).padStart(3, '0')}`)),
-    h('div', { class: 'g-art' }, canvas, sticker('NEW', 's-aqua', 'left:16px;top:14px;--r:-8deg'), barcode('WGS-001')),
+    h('div', { class: 'g-art' }, canvas, sticker('RELEASE 01', 's-aqua', 'left:16px;top:14px;--r:0deg'), barcode('WGS-001')),
     h('h2', { class: 'g-title' }, 'weeg', h('span', { class: 'accent' }, 'schaal')),
     h('p', { class: 'g-desc' }, 'Something lands on the scale. Guess its weight with real weights. An elephant, a Pikachu, the Eiffel Tower. Get roasted.'),
     h('div', { class: 'g-meta mono' }, h('span', null, '5 ROUNDS'), h('span', null, '66 OBJECTS'), h('span', null, 'NEXT IN ', cd)),

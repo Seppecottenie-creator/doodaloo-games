@@ -7,6 +7,7 @@ import type { GameObject, Mode, RoundResult } from '../game/types';
 import { t } from '../i18n';
 import { formatCountdown, soundButton } from './common';
 import { confetti } from './confetti';
+import { monogram } from './decor';
 import { announce, h, toast, tween } from './dom';
 
 export interface EndOpts {
@@ -23,7 +24,7 @@ const band = (s: number) => (s >= 90 ? 'g' : s >= 60 ? 'y' : s >= 30 ? 'o' : 'r'
 export function thumb(obj: GameObject | undefined): HTMLElement {
   const el = h('span', { class: 'end-thumb', 'aria-hidden': 'true' });
   if (obj?.image) el.append(h('img', { src: `${import.meta.env.BASE_URL}${obj.image}`, alt: '', loading: 'lazy' }));
-  else el.textContent = obj?.emoji ?? '❔';
+  else el.textContent = monogram(obj?.name ?? '?');
   return el;
 }
 
