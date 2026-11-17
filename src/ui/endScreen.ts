@@ -2,9 +2,11 @@ import { formatGrams, formatObjectWeight } from '../game/format';
 import { maxTotal, scoreSquare } from '../game/score';
 import { msUntilNextDay } from '../game/seed';
 import { shareResult, shareText } from '../game/share';
+import { verdict } from '../game/roast';
 import type { GameObject, Mode, RoundResult } from '../game/types';
-import { t } from '../i18n/nl';
+import { t } from '../i18n';
 import { formatCountdown, soundButton } from './common';
+import { confetti } from './confetti';
 import { announce, h, toast, tween } from './dom';
 
 export interface EndOpts {
@@ -25,10 +27,23 @@ export function thumb(obj: GameObject | undefined): HTMLElement {
   return el;
 }
 
+function ring(fraction: number): SVGSVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  svg.classList.add('ring');
+  const C = 2 * Math.PI * 52;
+  svg.innerHTML = `<circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" stroke-dasharray="${C}" stroke-dashoffset="${C}"/>`;
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => (svg.querySelector('.ring-fg') as SVGCircleElement).setAttribute('stroke-dashoffset', String(C * (1 - fraction)))),
+  );
+  return svg;
+}
+
 export function endScreen(root: HTMLElement, o: EndOpts): () => void {
   const total = o.results.reduce((s, r) => s + r.score, 0);
   const max = maxTotal();
-  const verdict = t.end.verdicts.find(([min]) => total >= min)?.[1] ?? '';
+  const v = verdict(total);
   const byId = new Map(o.objects.map((x) => [x.id, x]));
 
   const big = h('span', { class: 'end-total' }, '0');
@@ -60,24 +75,24 @@ export function endScreen(root: HTMLElement, o: EndOpts): () => void {
     const tick = () => (span.textContent = formatCountdown(msUntilNextDay()));
     tick();
     iv = window.setInterval(tick, 1000);
-    cd = h('p', { class: 'muted small center' }, `${t.end.next} `, span);
+    cd = h('p', { class: 'next-in center' }, `${t.end.next} `, span);
   }
 
   const screen = h(
     'main',
     { class: 'screen end' },
     h('div', { class: 'home-top' }, h('span', { class: 'end-kicker' }, o.number ? `Weegschaal #${o.number}` : t.end.titlePractice), soundButton()),
-    h('p', { class: 'end-title' }, t.end.title),
-    h('div', { class: 'end-score-wrap' }, big, h('span', { class: 'of' }, `/${max}`)),
-    h('p', { class: 'verdict' }, verdict),
+    h('div', { class: 'end-hero' }, ring(total / max), h('div', { class: 'end-score-wrap' }, h('span', { class: 'end-title' }, t.end.title), big, h('span', { class: 'of' }, `/ ${max}`))),
+    h('p', { class: 'verdict' }, v),
     h('div', { class: 'squares', 'aria-hidden': 'true' }, o.results.map((r) => scoreSquare(r.score)).join('')),
     h('ol', { class: 'end-list' }, ...rows),
     h('div', { class: 'end-actions' }, share, h('div', { class: 'row' }, again, home)),
     cd,
   );
   root.replaceChildren(screen);
-  tween(0, total, 1200, (v) => (big.textContent = String(Math.round(v))));
-  announce(`${t.end.title}: ${total} van ${max}. ${verdict}`);
+  tween(0, total, 1400, (val) => (big.textContent = String(Math.round(val))));
+  if (total >= 400) setTimeout(() => confetti(0.5, 0.3), 1200);
+  announce(`${t.end.title}: ${total} out of ${max}. ${v}`);
   share.focus({ preventScroll: true });
   return () => clearInterval(iv);
 }

@@ -1,7 +1,7 @@
 const COLORS = ['#d4a72c', '#f3dc8a', '#c0392b', '#2e7d5b', '#3f6fb5', '#ffffff'];
 
 /** Lichte confetti-burst op een tijdelijk canvas. */
-export function confetti(originX = 0.5, originY = 0.35) {
+export function confetti(originX = 0.5, originY = 0.35, count = 140) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const c = document.createElement('canvas');
   c.className = 'confetti';
@@ -14,7 +14,7 @@ export function confetti(originX = 0.5, originY = 0.35) {
   c.height = H * dpr;
   const ctx = c.getContext('2d')!;
   ctx.scale(dpr, dpr);
-  const parts = Array.from({ length: 140 }, () => {
+  const parts = Array.from({ length: count }, () => {
     const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
     const v = 500 + Math.random() * 700;
     return {

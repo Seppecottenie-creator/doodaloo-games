@@ -1,16 +1,18 @@
-import { WEIGHTS } from '../game/config';
-import { formatFactor, formatGramsExact, formatObjectWeight, formatGrams, weightLabel } from '../game/format';
+import { WEIGHTS, WEIGHT_SPECS } from '../game/config';
+import { formatGramsExact, formatObjectWeight, formatGrams, formatFactor, weightLabel } from '../game/format';
 import { Session } from '../game/session';
 import type { RoundResult } from '../game/types';
 import { buzz } from '../game/haptics';
+import { CLEARED, IDLE, LOADING, POKE_HEAD, POKE_OBJECT, moodFor, pick, roastLine } from '../game/roast';
 import * as sfx from '../audio/sfx';
-import { t } from '../i18n/nl';
+import { t } from '../i18n';
 import { createScale, weightIcons } from '../scale';
 import type { ScaleLike } from '../scale/types';
 import { paintWeightIcon } from '../scale/sprites';
 import { confetti } from './confetti';
 import { announce, h, reducedMotion, tween } from './dom';
 import { soundButton } from './common';
+import { Bubble } from './bubble';
 
 export interface GameScreenOpts {
   session: Session;
@@ -19,38 +21,40 @@ export interface GameScreenOpts {
   onQuit: () => void;
 }
 
-function reaction(r: RoundResult): string {
-  if (r.score >= 100) return t.reveal.exact;
-  if (r.score >= 95) return t.reveal.close;
-  const light = r.guess < r.actual;
-  const f = light ? r.actual / r.guess : r.guess / r.actual;
-  if (f >= 50) return t.reveal.miles;
-  if (f < 1.25) return light ? t.reveal.slightlyLight : t.reveal.slightlyHeavy;
-  return light ? t.reveal.tooLight(formatFactor(f)) : t.reveal.tooHeavy(formatFactor(f));
-}
+const band = (s: number) => (s >= 90 ? 'g' : s >= 60 ? 'y' : s >= 30 ? 'o' : 'r');
 
 export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void {
   const s = opts.session;
   const cleanups: (() => void)[] = [];
 
   // ---------- opbouw ----------
-  const dots = h('ol', { class: 'dots', 'aria-label': t.game.round(s.round + 1, s.objects.length) });
-  const scoreEl = h('output', { class: 'run-score', 'aria-label': t.game.score }, String(s.total));
-  const quit = h('button', { class: 'icon-btn', 'aria-label': t.game.quit, title: t.game.quit }, '✕');
-  const top = h('header', { class: 'topbar' }, quit, dots, h('div', { class: 'topbar-right' }, scoreEl, soundButton()));
+  const roundLabel = h('span', { class: 'hud-round' });
+  const segs = h('ol', { class: 'segs', 'aria-hidden': 'true' });
+  const scoreEl = h('output', { class: 'hud-score', 'aria-label': t.game.score }, String(s.total));
+  const quit = h('button', { class: 'icon-btn', type: 'button', 'aria-label': t.game.quit, title: t.game.quit }, '✕');
+  const top = h(
+    'header',
+    { class: 'hud' },
+    quit,
+    h('div', { class: 'hud-mid' }, roundLabel, segs),
+    h('div', { class: 'hud-right' }, h('span', { class: 'hud-score-wrap' }, h('span', { class: 'star', 'aria-hidden': 'true' }, '★'), scoreEl), soundButton()),
+  );
 
   const nameEl = h('h2', { class: 'obj-name' });
   const tagEl = h('span', { class: 'tag' });
   const descEl = h('p', { class: 'obj-desc' });
-  const card = h('section', { class: 'obj-card', 'aria-live': 'polite' }, h('div', { class: 'obj-head' }, nameEl, tagEl), descEl);
+  const credit = h('p', { class: 'credit' });
+  const card = h('section', { class: 'obj-card', 'aria-live': 'polite' }, tagEl, nameEl, descEl, credit);
 
   const canvas = h('canvas', { class: 'scale-canvas', role: 'img', 'aria-label': t.game.locked });
   const hint = h('div', { class: 'stage-hint' }, t.game.emptyHint);
-  const credit = h('div', { class: 'credit' });
-  const stage = h('div', { class: 'stage' }, canvas, hint, credit);
+  const intro = h('div', { class: 'round-intro', 'aria-hidden': 'true' });
+  const stage = h('div', { class: 'stage' }, canvas, hint, intro);
+  const bubble = new Bubble(stage);
 
   const totalEl = h('output', { class: 'total' }, '0 g');
-  const readout = h('div', { class: 'readout' }, h('span', { class: 'readout-label' }, t.game.total), totalEl);
+  const deltas = h('div', { class: 'deltas', 'aria-hidden': 'true' });
+  const readout = h('div', { class: 'readout' }, h('span', { class: 'readout-label' }, t.game.total), h('div', { class: 'total-wrap' }, totalEl, deltas));
 
   const trayBtns: HTMLButtonElement[] = [];
   const badges: HTMLSpanElement[] = [];
@@ -58,13 +62,13 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   WEIGHTS.forEach((w, idx) => {
     const icon = h('canvas', { class: 'w-icon', 'aria-hidden': 'true' });
     const badge = h('span', { class: 'badge', 'aria-hidden': 'true' });
-    const btn = h('button', { class: `w-btn w-${idx}`, type: 'button', 'data-idx': String(idx) }, icon, h('span', { class: 'w-label' }, weightLabel(w)), badge);
+    const five = String(w)[0] === '5';
+    const btn = h('button', { class: `w-btn w-${idx}${five ? ' five' : ''}`, type: 'button', 'data-idx': String(idx) }, icon, h('span', { class: 'w-label' }, weightLabel(w)), badge);
     trayBtns.push(btn);
     badges.push(badge);
     tray.append(btn);
-    requestAnimationFrame(() => paintWeightIcon(icon, idx, 46, 34));
+    requestAnimationFrame(() => paintWeightIcon(icon, idx, 40, 28));
   });
-  // 3D-gerenderde icoontjes zodra Three.js geladen is
   void weightIcons().then((urls) => {
     if (!urls) return;
     trayBtns.forEach((b, i) => {
@@ -73,8 +77,8 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     });
   });
 
-  const clearBtn = h('button', { class: 'btn ghost', type: 'button' }, t.game.clear);
-  const weighBtn = h('button', { class: 'btn primary weigh', type: 'button' }, t.game.weigh);
+  const clearBtn = h('button', { class: 'btn ghost clear', type: 'button', 'aria-label': t.game.clear, title: t.game.clear }, '↺');
+  const weighBtn = h('button', { class: 'btn primary weigh', type: 'button' }, h('span', null, t.game.weigh));
   const actions = h('div', { class: 'actions' }, clearBtn, weighBtn);
 
   const sheet = h('div', { class: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': 'sheet-score' });
@@ -89,14 +93,26 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   cleanups.push(() => {
     destroyed = true;
     scale?.destroy();
+    bubble.destroy();
   });
+
+  const timers: number[] = [];
+  const later = (ms: number, f: () => void) => {
+    const id = window.setTimeout(f, reducedMotion() ? Math.min(ms, 150) : ms);
+    timers.push(id);
+    return id;
+  };
+  cleanups.push(() => timers.forEach(clearTimeout));
+
+  const say = (text: string, ms = 2600) => bubble.show(text, scale?.headScreenPos?.() ?? null, ms);
+
   // ---------- render helpers ----------
   let shownTotal = 0;
   let stopTotal = () => {};
   function renderTotal() {
     const target = s.guess;
     stopTotal();
-    stopTotal = tween(shownTotal, target, 260, (v, done) => {
+    stopTotal = tween(shownTotal, target, 280, (v, done) => {
       shownTotal = done ? target : v;
       totalEl.textContent = formatGramsExact(done ? target : Math.round(v));
     });
@@ -105,10 +121,17 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     totalEl.classList.add('bump');
   }
 
+  function floatDelta(text: string, plus: boolean) {
+    if (reducedMotion()) return;
+    const d = h('span', { class: `delta ${plus ? 'plus' : 'minus'}` }, text);
+    deltas.append(d);
+    later(900, () => d.remove());
+  }
+
   function renderTray() {
     trayBtns.forEach((b, i) => {
       const n = s.counts[i];
-      badges[i].textContent = n ? `×${n}` : '';
+      badges[i].textContent = n ? `${n}` : '';
       b.classList.toggle('has', n > 0);
       b.classList.toggle('full', !s.canAdd(i) && s.phase === 'placing');
       b.setAttribute('aria-label', t.game.addWeight(weightLabel(WEIGHTS[i]), n));
@@ -119,38 +142,55 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     hint.classList.toggle('hide', s.guess > 0 || s.phase !== 'placing');
   }
 
-  function renderDots() {
-    dots.replaceChildren(
+  function renderHud() {
+    const n = s.objects.length;
+    roundLabel.textContent = t.game.round(Math.min(s.round + 1, n), n);
+    segs.replaceChildren(
       ...s.objects.map((_, i) => {
         const r = s.results[i];
-        const cls = r ? (r.score >= 90 ? 'g' : r.score >= 60 ? 'y' : r.score >= 30 ? 'o' : 'r') : i === s.round ? 'cur' : '';
-        return h('li', { class: `dot ${cls}` });
+        return h('li', { class: `seg ${r ? band(r.score) : i === s.round ? 'cur' : ''}` });
       }),
     );
-    dots.setAttribute('aria-label', t.game.round(Math.min(s.round + 1, s.objects.length), s.objects.length));
   }
 
-  function renderObject(drop: boolean) {
+  let idleTimer = 0;
+  function armIdle() {
+    clearTimeout(idleTimer);
+    idleTimer = later(9000, () => s.phase === 'placing' && say(pick(IDLE)));
+  }
+
+  function renderObject() {
     const o = s.current;
     nameEl.textContent = o.name;
     tagEl.textContent = o.fictional ? t.game.fictional : t.game.real;
     tagEl.className = `tag ${o.fictional ? 'fict' : 'real'}`;
     descEl.textContent = o.description;
+    credit.textContent = o.credit ? `Photo: ${o.credit.author} · ${o.credit.license}` : '';
     card.classList.remove('enter');
     void card.offsetWidth;
     card.classList.add('enter');
     canvas.setAttribute('aria-label', `${o.name}. ${t.game.locked}`);
-    credit.textContent = o.credit ? `📷 ${o.credit.author} · ${o.credit.license}` : '';
+    bubble.hide();
     scale.reset();
-    scale.setObject({ emoji: o.emoji, image: o.image ? `${import.meta.env.BASE_URL}${o.image}` : undefined }, drop);
     shownTotal = 0;
     totalEl.textContent = formatGramsExact(0);
     renderTray();
-    renderDots();
+    renderHud();
+    // ronde-intro, daarna valt het voorwerp
+    intro.replaceChildren(h('span', { class: 'ri-kicker' }, t.game.roundIntro(s.round + 1)), h('span', { class: 'ri-name' }, o.name));
+    intro.classList.remove('show');
+    void intro.offsetWidth;
+    intro.classList.add('show');
+    sfx.whoosh();
+    later(reducedMotion() ? 0 : 650, () => {
+      scale.setObject({ emoji: o.emoji, image: o.image ? `${import.meta.env.BASE_URL}${o.image}` : undefined }, true);
+    });
+    armIdle();
   }
 
   // ---------- acties ----------
-  function add(idx: number, from?: { x: number; y: number }) {
+  let addsThisRound = 0;
+  function add(idx: number, from?: { x: number; y: number }): boolean {
     sfx.unlockAudio();
     if (!s.add(idx)) {
       const b = trayBtns[idx];
@@ -158,24 +198,32 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
       void b.offsetWidth;
       b.classList.add('nope');
       buzz([6, 40, 6]);
-      return;
+      return false;
     }
     scale.addWeight(idx, from);
+    floatDelta(`+${weightLabel(WEIGHTS[idx])}`, true);
     renderTray();
     renderTotal();
+    armIdle();
+    addsThisRound++;
+    if (addsThisRound % 5 === 0 && Math.random() < 0.6) say(pick(LOADING), 1800);
+    return true;
   }
 
-  function removeIdx(idx: number) {
+  /** Haalt één gewicht van soort idx weg (de balans is al bijgewerkt als viaScale). */
+  function removeIdx(idx: number, viaScale = false) {
     if (!s.remove(idx)) return;
-    scale.removeOne(idx);
+    if (!viaScale) scale.removeOne(idx);
+    floatDelta(`−${weightLabel(WEIGHTS[idx])}`, false);
     sfx.lift();
     buzz(5);
     announce(t.game.removedWeight(weightLabel(WEIGHTS[idx])));
     renderTray();
     renderTotal();
+    armIdle();
   }
 
-  // Tikken (en Enter/Spatie) op de lade
+  // Tikken op de lade
   let suppressClick = false;
   tray.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.w-btn');
@@ -189,30 +237,58 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   tray.addEventListener('keydown', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.w-btn');
     if (!b) return;
+    const i = Number(b.dataset.idx);
     if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '-') {
       e.preventDefault();
-      removeIdx(Number(b.dataset.idx));
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      const i = Number(b.dataset.idx) + (e.key === 'ArrowRight' ? 1 : -1);
-      trayBtns[(i + trayBtns.length) % trayBtns.length].focus();
+      removeIdx(i);
+    } else if (e.key.startsWith('Arrow')) {
+      const step = ({ ArrowRight: 1, ArrowLeft: -1, ArrowDown: 7, ArrowUp: -7 } as Record<string, number>)[e.key] ?? 0;
+      trayBtns[(i + step + trayBtns.length) % trayBtns.length].focus();
       e.preventDefault();
     }
   });
 
-  // Slepen van de lade naar de schaal
-  let drag: { idx: number; id: number; x0: number; y0: number; ghost: HTMLElement | null; over: boolean } | null = null;
+  // Slepen naar de schaal; ingedrukt houden = blijven toevoegen
+  interface Drag {
+    idx: number;
+    id: number;
+    x0: number;
+    y0: number;
+    ghost: HTMLElement | null;
+    over: boolean;
+    hold: number;
+    repeated: boolean;
+  }
+  let drag: Drag | null = null;
   tray.addEventListener('pointerdown', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.w-btn');
     if (!b || b.disabled || e.button !== 0) return;
     sfx.unlockAudio();
-    drag = { idx: Number(b.dataset.idx), id: e.pointerId, x0: e.clientX, y0: e.clientY, ghost: null, over: false };
+    const idx = Number(b.dataset.idx);
+    const d: Drag = { idx, id: e.pointerId, x0: e.clientX, y0: e.clientY, ghost: null, over: false, hold: 0, repeated: false };
+    const repeat = (delay: number) => {
+      d.hold = window.setTimeout(() => {
+        if (drag !== d || d.ghost) return;
+        if (!add(idx)) return;
+        d.repeated = true;
+        b.classList.add('holding');
+        repeat(Math.max(70, delay * 0.8));
+      }, delay);
+    };
+    repeat(420);
+    drag = d;
   });
+  const endHold = (d: Drag) => {
+    clearTimeout(d.hold);
+    trayBtns[d.idx].classList.remove('holding');
+  };
   const onMove = (e: PointerEvent) => {
     if (!drag || e.pointerId !== drag.id) return;
     const dx = e.clientX - drag.x0;
     const dy = e.clientY - drag.y0;
     if (!drag.ghost) {
-      if (Math.hypot(dx, dy) < 10) return;
+      if (Math.hypot(dx, dy) < 10 || drag.repeated) return;
+      endHold(drag);
       const src = trayBtns[drag.idx].querySelector<HTMLImageElement>('img.w-icon')?.src;
       let gc: HTMLElement;
       if (src) gc = h('img', { src, alt: '' });
@@ -225,7 +301,8 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
       buzz(4);
     }
     e.preventDefault();
-    drag.ghost.style.transform = `translate(${e.clientX - 36}px, ${e.clientY - 46}px) rotate(${Math.max(-12, Math.min(12, dx * 0.05))}deg)`;
+    drag.ghost.style.transform = `translate(${e.clientX - 36}px, ${e.clientY - 46}px) rotate(${Math.max(-14, Math.min(14, dx * 0.06))}deg)`;
+    scale.lookAtScreen?.(e.clientX, e.clientY);
     const over = scale.isOverRightSide(e.clientX, e.clientY);
     if (over !== drag.over) {
       drag.over = over;
@@ -237,9 +314,12 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     if (!drag || e.pointerId !== drag.id) return;
     const d = drag;
     drag = null;
-    if (!d.ghost) return; // gewone tik: de click-handler doet het werk
-    suppressClick = true;
-    setTimeout(() => (suppressClick = false), 0);
+    endHold(d);
+    if (d.repeated || d.ghost) {
+      suppressClick = true;
+      setTimeout(() => (suppressClick = false), 0);
+    }
+    if (!d.ghost) return;
     d.ghost.remove();
     scale.setDropHighlight(false);
     if (e.type === 'pointerup' && d.over) add(d.idx, { x: e.clientX, y: e.clientY });
@@ -253,22 +333,30 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     window.removeEventListener('pointercancel', onUp);
     drag?.ghost?.remove();
   });
-  // Geen scroll/zoom tijdens slepen op touch
-  tray.style.touchAction = 'none';
+  tray.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // Tik op een gewicht op de schaal = weghalen
+  // Tik op de balans: gewicht weghalen, of het hoofd/voorwerp porren
   canvas.addEventListener('pointerdown', (e) => {
-    if (s.phase !== 'placing' || !scale) return;
-    const id = scale.hitTest(e.clientX, e.clientY);
-    if (id === null) return;
-    const idx = scale.removeWeight(id);
-    if (idx === undefined) return;
-    s.remove(idx);
-    sfx.lift();
-    buzz(5);
-    announce(t.game.removedWeight(weightLabel(WEIGHTS[idx])));
-    renderTray();
-    renderTotal();
+    if (!scale) return;
+    sfx.unlockAudio();
+    if (s.phase === 'placing') {
+      const id = scale.hitTest(e.clientX, e.clientY);
+      if (id !== null) {
+        const idx = scale.removeWeight(id);
+        if (idx !== undefined) removeIdx(idx, true);
+        return;
+      }
+    }
+    const hit = scale.poke?.(e.clientX, e.clientY);
+    if (hit === 'head') {
+      sfx.boing();
+      buzz(10);
+      say(pick(POKE_HEAD), 1800);
+    } else if (hit === 'object') {
+      sfx.plof(0.4);
+      buzz(8);
+      if (Math.random() < 0.5) say(pick(POKE_OBJECT), 1800);
+    }
   });
 
   clearBtn.addEventListener('click', () => {
@@ -277,48 +365,72 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     sfx.lift();
     renderTray();
     renderTotal();
+    if (Math.random() < 0.5) say(pick(CLEARED), 1600);
   });
 
-  quit.addEventListener('click', () => {
-    opts.onQuit();
-  });
+  quit.addEventListener('click', () => opts.onQuit());
 
   // ---------- wegen + onthulling ----------
-  const timers: number[] = [];
-  const later = (ms: number, f: () => void) => timers.push(window.setTimeout(f, reducedMotion() ? Math.min(ms, 150) : ms));
-  cleanups.push(() => timers.forEach(clearTimeout));
-
   weighBtn.addEventListener('click', () => {
     sfx.unlockAudio();
     const out = s.weigh();
     if (!out) return;
     const { result, tilt } = out;
+    clearTimeout(idleTimer);
+    bubble.hide();
     opts.onRoundDone(s, result);
     renderTray();
     sfx.lockClick();
     buzz(10);
-    later(220, () => {
+    screen.classList.add('weighing');
+    later(260, () => {
       scale.unlock(tilt);
       sfx.creak(Math.min(1, Math.abs(tilt) / 22));
     });
+    later(1150, () => {
+      scale.setMood?.(moodFor(result.score));
+      say(roastLine(result), 60000);
+    });
     later(1500, () => showReveal(result));
   });
+
+  /** Logaritmische meter: waar zat je gok t.o.v. het echte gewicht? */
+  function meter(r: RoundResult) {
+    const lg = Math.log10(r.guess);
+    const la = Math.log10(r.actual);
+    const span = Math.max(1.2, Math.abs(lg - la) * 1.4);
+    const mid = (lg + la) / 2;
+    const pct = (v: number) => Math.max(4, Math.min(96, 50 + ((v - mid) / span) * 100));
+    const gap = h('span', { class: `m-gap ${band(r.score)}` });
+    const you = h('span', { class: 'm-pin you', style: `left:${pct(lg)}%` }, h('b', null, t.reveal.yourGuess));
+    const real = h('span', { class: 'm-pin real', style: `left:${pct(lg)}%` }, h('b', null, t.reveal.actual));
+    const a = Math.min(pct(lg), pct(la));
+    const b = Math.max(pct(lg), pct(la));
+    gap.style.left = `${a}%`;
+    gap.style.width = `${b - a}%`;
+    const el = h('div', { class: 'meter', 'aria-hidden': 'true' }, h('span', { class: 'm-track' }), gap, you, real);
+    // het "echt"-pinnetje schuift van jouw gok naar de waarheid
+    requestAnimationFrame(() => requestAnimationFrame(() => (real.style.left = `${pct(la)}%`)));
+    return el;
+  }
 
   function showReveal(r: RoundResult) {
     const o = s.current;
     const last = s.round >= s.objects.length - 1;
     const scoreNum = h('span', { class: 'big', id: 'sheet-score' }, '0');
-    const band = r.score >= 90 ? 'g' : r.score >= 60 ? 'y' : r.score >= 30 ? 'o' : 'r';
+    const light = r.guess < r.actual;
+    const f = light ? r.actual / r.guess : r.guess / r.actual;
+    const offBy = r.score >= 100 ? t.reveal.spotOn : light ? t.reveal.tooLight(formatFactor(f)) : t.reveal.tooHeavy(formatFactor(f));
     const actualEl = h('b', { class: 'actual' }, formatGrams(r.guess));
-    const nextBtn = h('button', { class: 'btn primary', type: 'button' }, last ? t.reveal.finish : t.reveal.next);
+    const nextBtn = h('button', { class: 'btn primary big', type: 'button' }, last ? t.reveal.finish : t.reveal.next);
     sheet.replaceChildren(
-      h('div', { class: 'sheet-top' }, h('div', { class: `sheet-score ${band}` }, scoreNum, h('span', { class: 'of' }, '/100')), h('p', { class: 'reaction' }, reaction(r))),
       h(
         'div',
-        { class: 'compare' },
-        h('div', null, h('small', null, t.reveal.yourGuess), h('b', null, formatGrams(r.guess))),
-        h('div', null, h('small', null, t.reveal.actual), actualEl),
+        { class: 'sheet-top' },
+        h('div', { class: `sheet-score ${band(r.score)}` }, scoreNum, h('span', { class: 'of' }, '/100')),
+        h('div', { class: 'sheet-vs' }, h('span', { class: `off ${band(r.score)}` }, offBy), h('span', { class: 'vs-line' }, `${formatGrams(r.guess)} → `, actualEl)),
       ),
+      meter(r),
       h('div', { class: 'fact' }, h('small', null, t.reveal.funFact), h('p', null, o.funFact)),
       nextBtn,
     );
@@ -327,51 +439,51 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     void sheet.offsetWidth;
     sheet.classList.add('open');
 
-    // echt gewicht telt (in log-ruimte) van jouw gok naar de waarheid
-    const la = Math.log10(r.guess);
-    const lb = Math.log10(r.actual);
-    tween(la, lb, 900, (v, done) => {
+    tween(Math.log10(r.guess), Math.log10(r.actual), 900, (v, done) => {
       actualEl.textContent = done ? formatObjectWeight(r.actual, o.estimate) : formatGrams(Math.pow(10, v));
     });
     let lastTick = 0;
-    later(350, () =>
-      tween(0, r.score, 700, (v, done) => {
+    later(300, () =>
+      tween(0, r.score, 750, (v, done) => {
         const n = Math.round(v);
         scoreNum.textContent = String(n);
         if (n - lastTick >= 7) {
           sfx.tick(n);
           lastTick = n;
         }
-        if (done) {
-          scoreEl.textContent = String(s.total);
-          scoreEl.classList.remove('bump');
-          void scoreEl.offsetWidth;
-          scoreEl.classList.add('bump');
-          renderDots();
-          if (r.score >= 100) {
-            sfx.jingle(true);
-            confetti(0.5, 0.45);
-            buzz([20, 40, 20, 40, 60]);
-          } else if (r.score >= 90) {
-            sfx.jingle(false);
-            buzz([15, 30, 15]);
-          } else if (r.score === 0) {
-            sfx.fail();
-            scale.shake();
-            buzz([40, 30, 40]);
-          } else buzz(15);
-        }
+        if (!done) return;
+        scoreEl.textContent = String(s.total);
+        const wrap = scoreEl.parentElement!;
+        wrap.classList.remove('bump');
+        void wrap.offsetWidth;
+        wrap.classList.add('bump');
+        renderHud();
+        if (r.score >= 100) {
+          sfx.jingle(true);
+          confetti(0.5, 0.4);
+          buzz([20, 40, 20, 40, 60]);
+        } else if (r.score >= 90) {
+          sfx.jingle(false);
+          confetti(0.5, 0.4, 50);
+          buzz([15, 30, 15]);
+        } else if (r.score === 0) {
+          sfx.fail();
+          scale.shake();
+          buzz([40, 30, 40]);
+        } else buzz(15);
       }),
     );
-    announce(`${r.score} van 100. ${reaction(r)}. ${t.reveal.yourGuess}: ${formatGrams(r.guess)}. ${t.reveal.actual}: ${formatObjectWeight(r.actual, o.estimate)}.`);
-    later(250, () => nextBtn.focus());
+    announce(`${r.score} out of 100. ${offBy}. ${t.reveal.yourGuess}: ${formatGrams(r.guess)}. ${t.reveal.actual}: ${formatObjectWeight(r.actual, o.estimate)}.`);
+    later(250, () => nextBtn.focus({ preventScroll: true }));
 
     nextBtn.addEventListener('click', () => {
       sheet.classList.remove('open');
       sheet.hidden = true;
+      screen.classList.remove('weighing');
+      bubble.hide();
       if (s.next()) {
-        renderObject(true);
-        trayBtns[0].focus({ preventScroll: true });
+        addsThisRound = 0;
+        renderObject();
       } else opts.onFinish(s);
     });
   }
@@ -386,14 +498,14 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
         buzz(12);
       } else {
         sfx.clink(idx, strength);
-        buzz(idx >= 6 ? 18 : 8);
+        buzz(WEIGHT_SPECS[idx].heft > 0.5 ? 18 : 8);
       }
     },
   }).then((sc) => {
     if (destroyed) return sc.destroy();
     scale = sc;
     canvas.classList.add('ready');
-    renderObject(true);
+    renderObject();
   });
   return () => cleanups.forEach((f) => f());
 }

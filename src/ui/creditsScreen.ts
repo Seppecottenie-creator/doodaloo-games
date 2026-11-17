@@ -1,5 +1,5 @@
 import type { GameObject } from '../game/types';
-import { t } from '../i18n/nl';
+import { t } from '../i18n';
 import { h } from './dom';
 
 export function creditsScreen(root: HTMLElement, pool: GameObject[], onBack: () => void): () => void {

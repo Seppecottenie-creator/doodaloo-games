@@ -3,6 +3,9 @@ export interface ScaleObject {
   image?: string;
 }
 
+/** Gezichtsuitdrukking van de balans. */
+export type Mood = 'idle' | 'focus' | 'strain' | 'surprised' | 'happy' | 'meh' | 'angry' | 'dead' | 'smug';
+
 export interface ScaleCallbacks {
   /** Er landt iets op een schaal. `strength` 0–1. */
   onLand?: (kind: 'object' | 'weight', idx: number, strength: number) => void;
@@ -24,4 +27,9 @@ export interface ScaleLike {
   hitTest(clientX: number, clientY: number): number | null;
   isOverRightSide(clientX: number, clientY: number): boolean;
   destroy(): void;
+  /** Optioneel (enkel de 3D-balans heeft een gezicht). */
+  setMood?(m: Mood): void;
+  lookAtScreen?(clientX: number, clientY: number): void;
+  poke?(clientX: number, clientY: number): 'head' | 'object' | null;
+  headScreenPos?(): { x: number; y: number };
 }

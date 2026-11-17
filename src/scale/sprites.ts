@@ -1,19 +1,8 @@
-import { WEIGHTS } from '../game/config';
+import { WEIGHTS, WEIGHT_SPECS } from '../game/config';
 import { weightLabel } from '../game/format';
 
-/** Basisafmeting (CSS px bij een schaal van 150 px breed) per gewicht, van 1 g tot 1000 t. */
-export const WEIGHT_SIZE: readonly [number, number][] = [
-  [11, 15], // 1 g     messing knopje
-  [15, 20], // 10 g
-  [21, 27], // 100 g
-  [30, 27], // 1 kg    gietijzer met hengsel
-  [40, 30], // 10 kg   gietijzeren blok
-  [52, 34], // 100 kg  blok met ring
-  [62, 38], // 1 t     betonblok met haak
-  [78, 38], // 10 t    staal met waarschuwingsstrepen
-  [104, 40], // 100 t  zeecontainer
-  [130, 50], // 1000 t grote container met kraanhaak
-];
+/** Basisafmeting (CSS px bij een schaal van 150 px breed) per gewicht. */
+export const WEIGHT_SIZE: readonly [number, number][] = WEIGHT_SPECS.map((w) => w.size);
 
 /** Extra ruimte boven het lichaam voor hengsels en haken (in fracties van de hoogte). */
 const TOP_PAD = 0.45;
@@ -57,8 +46,9 @@ function label(ctx: Ctx, text: string, cx: number, cy: number, size: number, col
 export function drawWeight(ctx: Ctx, idx: number, w: number, h: number) {
   const x = -w / 2;
   const text = weightLabel(WEIGHTS[idx]);
+  const st = WEIGHT_SPECS[idx].style;
   ctx.save();
-  if (idx <= 2) {
+  if (st === 'brass') {
     // Messing knopgewicht: cilinder, hals en bolletje.
     const bh = h * 0.62;
     ctx.fillStyle = hGrad(ctx, x, w, BRASS);
@@ -79,7 +69,7 @@ export function drawWeight(ctx: Ctx, idx: number, w: number, h: number) {
     ctx.fillStyle = rg;
     ctx.fill();
     if (w >= 20) label(ctx, text.replace(' ', ''), 0, -bh / 2, Math.max(6, w * 0.3), '#5b4310', 'rgba(255,240,190,0.6)');
-  } else if (idx === 3) {
+  } else if (st === 'bell' || st === 'kettle') {
     // 1 kg: klokvormig gietijzer met hengsel.
     ctx.strokeStyle = '#2e2e33';
     ctx.lineWidth = Math.max(2, w * 0.1);
@@ -94,11 +84,11 @@ export function drawWeight(ctx: Ctx, idx: number, w: number, h: number) {
     ctx.lineTo(x + w, 0);
     ctx.closePath();
     ctx.fill();
-    label(ctx, '1kg', 0, -h * 0.34, w * 0.26, '#a9a9b3', 'rgba(0,0,0,0.6)');
-  } else if (idx === 4 || idx === 5) {
+    label(ctx, text.replace(' ', ''), 0, -h * 0.34, w * 0.24, '#a9a9b3', 'rgba(0,0,0,0.6)');
+  } else if (st === 'block' || st === 'ring' || st === 'plate' || st === 'anvil') {
     // 10 kg / 100 kg: gietijzeren blok met hengsel of ring.
     const bh = h * 0.74;
-    if (idx === 4) {
+    if (st === 'block' || st === 'plate') {
       ctx.fillStyle = '#2b2b30';
       ctx.fillRect(-w * 0.28, -h, w * 0.08, h - bh + 2);
       ctx.fillRect(w * 0.2, -h, w * 0.08, h - bh + 2);
@@ -122,7 +112,7 @@ export function drawWeight(ctx: Ctx, idx: number, w: number, h: number) {
     rrect(ctx, x + w * 0.1, -bh + bh * 0.2, w * 0.8, bh * 0.6, 3);
     ctx.stroke();
     label(ctx, text.replace(' ', ''), 0, -bh / 2, Math.min(bh * 0.42, w * 0.24), '#b3b3bd', 'rgba(0,0,0,0.6)');
-  } else if (idx === 6) {
+  } else if (st === 'concrete') {
     // 1 t: betonblok met hijsoog.
     const bh = h * 0.78;
     ctx.strokeStyle = STEEL[1];
@@ -143,8 +133,8 @@ export function drawWeight(ctx: Ctx, idx: number, w: number, h: number) {
       const py = -bh + 3 + (s / 233280) * (bh - 6);
       ctx.fillRect(px, py, 1.4, 1.4);
     }
-    label(ctx, '1 t', 0, -bh / 2, bh * 0.42, '#4b4a45', 'rgba(255,255,255,0.4)');
-  } else if (idx === 7) {
+    label(ctx, text, 0, -bh / 2, bh * 0.42, '#4b4a45', 'rgba(255,255,255,0.4)');
+  } else if (st === 'steel' || st === 'safe') {
     // 10 t: geverfd staal met waarschuwingsstrepen.
     const bh = h * 0.8;
     ctx.fillStyle = '#3c4249';
@@ -169,10 +159,10 @@ export function drawWeight(ctx: Ctx, idx: number, w: number, h: number) {
       ctx.fill();
     }
     ctx.restore();
-    label(ctx, '10 t', 0, -bh * 0.64, bh * 0.38, '#f3f6f8', 'rgba(0,0,0,0.5)');
+    label(ctx, text, 0, -bh * 0.64, bh * 0.38, '#f3f6f8', 'rgba(0,0,0,0.5)');
   } else {
     // 100 t / 1000 t: zeecontainer (1000 t met kraanhaak).
-    const big = idx === 9;
+    const big = st === 'mega';
     const bh = big ? h * 0.8 : h;
     if (big) {
       ctx.strokeStyle = '#2a2a2a';

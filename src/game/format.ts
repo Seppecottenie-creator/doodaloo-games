@@ -1,8 +1,9 @@
+import { LOCALE } from '../i18n';
 const nf = new Map<number, Intl.NumberFormat>();
 function fmt(n: number, maxFrac: number): string {
   let f = nf.get(maxFrac);
   if (!f) {
-    f = new Intl.NumberFormat('nl-BE', { maximumFractionDigits: maxFrac, useGrouping: true });
+    f = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: maxFrac, useGrouping: true });
     nf.set(maxFrac, f);
   }
   return f.format(n);
@@ -16,7 +17,7 @@ function split(grams: number): [number, string] {
 }
 
 /**
- * Gewicht in Belgische notatie, afgerond op ±3 beduidende cijfers:
+ * Gewicht in de notatie van de actieve taal (en-GB: 1,500 t · 2.2 kg · 8.5 g), afgerond op ±3 beduidende cijfers:
  * 1.500.000.000 → "1.500 t", 2200 → "2,2 kg", 8.5 → "8,5 g".
  */
 export function formatGrams(grams: number): string {
@@ -32,9 +33,9 @@ export function formatGramsExact(grams: number): string {
   return `${fmt(v, 3)} ${unit}`;
 }
 
-/** Gewicht van een voorwerp, met "±" en "(schatting)" waar nodig. */
+/** Gewicht van een voorwerp, met "±" en "(est.)" waar nodig. */
 export function formatObjectWeight(grams: number, estimate?: boolean): string {
-  return estimate ? `± ${formatGrams(grams)} (schatting)` : formatGrams(grams);
+  return estimate ? `± ${formatGrams(grams)} (est.)` : formatGrams(grams);
 }
 
 /** Label voor een gewichtje in de lade: "1 g", "10 kg", "1000 t". */

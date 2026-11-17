@@ -1,6 +1,6 @@
 import { setSoundEnabled, unlockAudio } from '../audio/sfx';
 import { load, save } from '../game/storage';
-import { t } from '../i18n/nl';
+import { t } from '../i18n';
 import { h } from './dom';
 
 export function soundButton(): HTMLButtonElement {

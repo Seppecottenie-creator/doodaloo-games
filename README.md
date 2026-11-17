@@ -1,6 +1,7 @@
 # ⚖️ Weegschaal
 
-Raad hoe zwaar iets is. Leg gewichten op de balans, druk op **Weeg!** en kijk hoe ver je ernaast zat. 5 rondes, max. 500 punten.
+Raad hoe zwaar iets is. Leg gewichten op de balans, druk op **Weigh!** en laat je uitlachen door de balans. 5 rondes, max. 500 punten.
+Het spel is in het **Engels** (`src/i18n/en.ts`); de Nederlandse teksten staan nog in `src/i18n/nl.ts` voor een latere taalknop.
 De volledige bouwopdracht staat in [`WEEGSCHAAL_SPEC.md`](WEEGSCHAAL_SPEC.md).
 
 ## Status
@@ -20,6 +21,15 @@ npm run dev        # http://localhost:5173
 npm test           # Vitest: score, daily seed, Belgische notatie
 npm run build      # productiebuild in dist/
 ```
+
+## Wat er in het spel zit
+
+- **14 gewichten**: 1 g · 10 g · 100 g · 1 kg · 5 kg · 10 kg · 50 kg · 100 kg · 500 kg · 1 t · 5 t · 10 t · 100 t · 1000 t, elk met een eigen 3D-model (messing, kettlebell, halterschijf, aambeeld, brandkast, containers…). De tabel staat in `src/game/config.ts` (`WEIGHT_SPECS`).
+- **Stapels passen altijd**: zwaarste onderaan, desnoods in twee torens, max. 4 zichtbaar per soort met een ×N-label (`src/scale/layout.ts`, getest).
+- **De balans heeft een gezicht**: googly eyes die je vinger volgen, wenkbrauwen en mond die reageren, knipperen; X-ogen bij 0 punten.
+- **Roasts**: per score een felle (vloekende) reactie in een tekstballon; ook als je het hoofd of het voorwerp aantikt (`src/game/roast.ts`).
+- **Interactie**: tikken, slepen, ingedrukt houden om te blijven toevoegen, tik op een gewicht op de schaal om het weg te halen, tik op het hoofd of het voorwerp.
+- **UI**: home met een levende balans, ronde-intro, zwevende +/−-meldingen, logaritmische meter bij de onthulling, eindscherm met scorering.
 
 ## Technische keuzes
 
