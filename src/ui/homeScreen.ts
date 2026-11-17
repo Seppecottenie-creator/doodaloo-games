@@ -9,6 +9,7 @@ import type { ScaleLike } from '../scale/types';
 import { Bubble } from './bubble';
 import { formatCountdown, soundButton } from './common';
 import { h } from './dom';
+import { spinBadge, sticker } from './decor';
 
 export type PracticeKind = 'mix' | 'real' | 'fictional';
 
@@ -17,6 +18,7 @@ export interface HomeOpts {
   onDailyResult: () => void;
   onPractice: (kind: PracticeKind) => void;
   onCredits: () => void;
+  onPortal: () => void;
 }
 
 /** Aantal opeenvolgende dagen met een afgewerkt dagelijks spel (tot vandaag of gisteren). */
@@ -83,14 +85,18 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   const hero = h('div', { class: 'hero' }, heroCanvas);
   const bubble = new Bubble(hero);
 
-  const brand = h('div', { class: 'wordmark' });
-  brand.innerHTML = `${ICON.star}<span>doodaloo</span>`;
+  const brand = h('button', { class: 'wordmark back', type: 'button', title: 'All doodaloo games' });
+  brand.innerHTML = `<span class="back-arrow" aria-hidden="true">←</span>${ICON.star}<span>doodaloo</span>`;
+  brand.addEventListener('click', opts.onPortal);
 
   const card = h(
     'section',
     { class: 'home-card' },
     h('div', { class: 'card-head' }, h('h1', null, 'weeg', h('span', { class: 'accent' }, 'schaal')), h('p', { class: 'tagline' }, t.tagline), tabs),
     hero,
+    sticker('DAILY!', 's-lime', 'right:22px;top:24px;--r:9deg'),
+    sticker('NO ACCOUNT', 's-aqua', 'right:34px;top:64px;--r:-6deg'),
+    spinBadge('5 THINGS ✦ 1 SCALE ✦ 0 MERCY ✦ ', '⚖', 'home-badge'),
     h(
       'div',
       { class: 'card-foot' },

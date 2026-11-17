@@ -11,6 +11,8 @@ import { gameScreen } from './gameScreen';
 import { homeScreen, type PracticeKind } from './homeScreen';
 import { creditsScreen } from './creditsScreen';
 import { preloadScale, weightIcons } from '../scale';
+import { portalScreen } from './portalScreen';
+import { mountBackdrop } from './decor';
 
 // Mijlpaal 1: de pool zit in de bundle. Vanaf mijlpaal 3 komt het dagelijkse spel van de server.
 const POOL = objects as GameObject[];
@@ -35,8 +37,25 @@ export function startApp(root: HTMLElement) {
         onDailyResult: dailyResult,
         onPractice: practice,
         onCredits: () => show(() => creditsScreen(root, POOL, home)),
+        onPortal: () => go(''),
       }),
     );
+
+  // ---------- routing: #weegschaal = het spel, anders het doodaloo-portaal ----------
+  const portal = () => show(() => portalScreen(root, { onWeegschaal: () => go('weegschaal') }));
+  function go(hash: string) {
+    if (location.hash.replace('#', '') === hash) return route();
+    if (hash) location.hash = hash;
+    else history.pushState(null, '', location.pathname + location.search);
+    route();
+  }
+  function route() {
+    const h = location.hash.replace('#', '');
+    if (h === 'weegschaal') home();
+    else portal();
+  }
+  window.addEventListener('hashchange', route);
+  window.addEventListener('popstate', route);
 
   function daily() {
     const day = dayString();
@@ -114,7 +133,10 @@ export function startApp(root: HTMLElement) {
     );
   }
 
-  home();
+  mountBackdrop();
+  // ?test=… gaat meteen naar Weegschaal
+  if (new URLSearchParams(location.search).get('test') && !location.hash) location.hash = 'weegschaal';
+  route();
   // 3D-balans alvast laden terwijl de speler op home staat
   const idle = (window as Window & { requestIdleCallback?: (f: () => void) => void }).requestIdleCallback ?? ((f: () => void) => setTimeout(f, 300));
   idle(() => void preloadScale().then(() => weightIcons()));
