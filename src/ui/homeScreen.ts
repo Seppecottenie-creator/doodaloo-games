@@ -92,7 +92,7 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   const card = h(
     'section',
     { class: 'home-card' },
-    h('div', { class: 'card-head' }, h('h1', null, 'weeg', h('span', { class: 'accent' }, 'schaal')), h('p', { class: 'tagline' }, t.tagline), tabs),
+    h('div', { class: 'card-head' }, h('h1', null, 'weight ', h('span', { class: 'accent' }, 'for it')), h('p', { class: 'tagline' }, t.tagline), tabs),
     hero,
     sticker('DAILY / 24H', 's-lime', 'right:22px;top:26px;--r:0deg'),
     sticker('LOT 001', 's-aqua', 'right:22px;top:58px;--r:0deg'),

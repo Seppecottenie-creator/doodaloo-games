@@ -1,6 +1,6 @@
 /** All game copy. English is the active language; nl.ts is kept for a later Dutch toggle. */
 export const en = {
-  appName: 'Weegschaal',
+  appName: 'Weight For It',
   tagline: '5 things. Guess their weight. Get roasted.',
   home: {
     playDaily: (n: number) => `Play today’s #${n}`,
@@ -59,7 +59,7 @@ export const en = {
     home: 'Home',
     next: 'Next scale in',
     shareHeader: (n: number | null, total: number, max: number) =>
-      n === null ? `⚖️ Weegschaal (free play) — ${total}/${max}` : `⚖️ Weegschaal #${n} — ${total}/${max}`,
+      n === null ? `⚖️ Weight For It (free play) — ${total}/${max}` : `⚖️ Weight For It #${n} — ${total}/${max}`,
   },
   settings: {
     sound: 'Sound',
