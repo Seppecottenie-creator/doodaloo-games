@@ -1,51 +1,57 @@
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../src/game/rng';
-import { canon, connected, grow, levelFor, makePuzzle, project, Run, transform, START_TIME, WRONG_PENALTY } from '../src/shady/logic';
+import { dailyLevels, hull, iou, matchScore, rasterize, shadowPolys, shadyShare, type Part } from '../src/shady/logic';
+
+const cube: Part[] = [{ kind: 'box', c: [0, 1, 0], s: [0.5, 0.5, 0.5] }];
 
 describe('shady', () => {
-  it('grows connected sculptures inside the grid', () => {
-    for (let s = 1; s < 50; s++) {
-      const c = grow(mulberry32(s), 7, 4);
-      expect(c).toHaveLength(7);
-      expect(new Set(c.map((x) => x.join())).size).toBe(7);
-      expect(connected(c)).toBe(true);
-      expect(c.every((p) => p.every((v) => v >= 0 && v < 4))).toBe(true);
+  it('hull of a square', () => {
+    expect(hull([[0, 0], [1, 0], [1, 1], [0, 1], [0.5, 0.5]])).toHaveLength(4);
+  });
+
+  it('sun straight overhead casts the footprint', () => {
+    const polys = shadowPolys(cube, { az: 0, el: Math.PI / 2 - 1e-6 });
+    const r = rasterize(polys);
+    const cells = r.reduce((s, x) => s + x, 0);
+    // 1×1 op een rooster van 12/96 = 0,125 per cel → ±64 cellen
+    expect(cells).toBeGreaterThan(50);
+    expect(cells).toBeLessThan(90);
+  });
+
+  it('lower sun = longer shadow, pointing away from the sun', () => {
+    const high = rasterize(shadowPolys(cube, { az: 0, el: 1.2 })).reduce((s, x) => s + x, 0);
+    const low = rasterize(shadowPolys(cube, { az: 0, el: 0.5 })).reduce((s, x) => s + x, 0);
+    expect(low).toBeGreaterThan(high);
+    // zon in +x → schaduw naar −x
+    const xs = shadowPolys(cube, { az: 0, el: 0.5 })[0].map((p) => p[0]);
+    expect(Math.min(...xs)).toBeLessThan(-1);
+  });
+
+  it('iou is 1 for the target sun and lower elsewhere', () => {
+    for (const lv of dailyLevels('2026-11-17')) {
+      const t = rasterize(shadowPolys(lv.parts, lv.target));
+      expect(iou(t, t)).toBe(1);
+      expect(iou(t, rasterize(shadowPolys(lv.parts, lv.start)))).toBeLessThan(0.36);
     }
   });
 
-  it('canon ignores rotation and mirroring', () => {
-    const L: [number, number][] = [
-      [0, 0],
-      [0, 1],
-      [0, 2],
-      [1, 0],
-    ];
-    for (let t = 0; t < 8; t++) expect(canon(transform(L, t))).toBe(canon(L));
+  it('daily levels are deterministic and 5 long', () => {
+    const a = dailyLevels('2026-11-17');
+    expect(a).toHaveLength(5);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(dailyLevels('2026-11-17')));
   });
 
-  it('exactly one option can be cast by the sculpture', () => {
-    for (let s = 1; s < 120; s++) {
-      const rnd = mulberry32(s);
-      const p = makePuzzle(rnd, levelFor(s % 30));
-      const truth = new Set([0, 1, 2].map((a) => canon(project(p.cubes, a))));
-      const real = p.options.map((o) => truth.has(canon(o)));
-      expect(real.filter(Boolean)).toHaveLength(1);
-      expect(real[p.answer]).toBe(true);
-      expect(new Set(p.options.map(canon)).size).toBe(4);
-    }
+  it('scores', () => {
+    expect(matchScore(0.98)).toBe(100);
+    expect(matchScore(0.5)).toBe(50);
+    expect(shadyShare(3, [100, 92, 80, 60, 10])).toContain('Shady #3 — 342/500');
   });
 
-  it('runs are deterministic per seed and track time', () => {
-    const a = new Run('shady2:2026-11-17');
-    const b = new Run('shady2:2026-11-17');
-    expect(a.current).toEqual(b.current);
-    expect(a.answer(a.current.answer)).toBe(true);
-    expect(a.time).toBeGreaterThan(START_TIME);
-    const t = a.time;
-    a.answer((a.current.answer + 1) % 4);
-    expect(a.time).toBeCloseTo(t - WRONG_PENALTY);
-    expect(a.streak).toBe(0);
-    a.tick(999);
-    expect(a.over).toBe(true);
+  it('level generation is quick', () => {
+    const r = mulberry32(5);
+    const t = performance.now();
+    for (let i = 0; i < 20; i++) dailyLevels(`2026-01-${10 + i}`);
+    expect(performance.now() - t).toBeLessThan(3000);
+    void r;
   });
 });

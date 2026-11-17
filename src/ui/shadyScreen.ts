@@ -2,26 +2,37 @@ import * as sfx from '../audio/sfx';
 import { buzz } from '../game/haptics';
 import { dayString, msUntilNextDay, puzzleNumber } from '../game/seed';
 import { shareResult } from '../game/share';
-import { dailySeed, MAX_TIME, Run, shadyShare, shadyVerdict, timeBonus, WRONG_PENALTY , makePuzzle, levelFor } from '../shady/logic';
-import { shadowSvg } from '../shady/shadowSvg';
-import type { SculptureView } from '../shady/SculptureView';
-import { mulberry32 } from '../game/rng';
+import {
+  buildLevels,
+  dailyLevels,
+  iou,
+  LEVELS,
+  matchScore,
+  rasterize,
+  roundLine,
+  shadowPolys,
+  shadyShare,
+  shadySquare,
+  shadyVerdict,
+  type Level,
+  type Sun,
+} from '../shady/logic';
+import type { SundialView } from '../shady/SundialView';
 import { formatCountdown, soundButton } from './common';
 import { confetti } from './confetti';
 import { announce, h } from './dom';
 
-const KEY = 'shady:v2';
+const KEY = 'shady:v3';
 interface ShadyStore {
-  daily: Record<string, { solved: number; bestStreak: number }>;
+  daily: Record<string, { scores: number[]; done: boolean }>;
   best: number;
-  runs: number;
 }
 function loadStore(): ShadyStore {
   try {
     const p = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<ShadyStore>;
-    return { daily: p.daily ?? {}, best: p.best ?? 0, runs: p.runs ?? 0 };
+    return { daily: p.daily ?? {}, best: p.best ?? 0 };
   } catch {
-    return { daily: {}, best: 0, runs: 0 };
+    return { daily: {}, best: 0 };
   }
 }
 function saveStore(s: ShadyStore) {
@@ -32,22 +43,12 @@ function saveStore(s: ShadyStore) {
   }
 }
 
-let viewMod: Promise<typeof import('../shady/SculptureView') | null> | null = null;
-function loadView() {
-  viewMod ??= import('../shady/SculptureView').catch(() => null);
-  return viewMod;
-}
-async function makeView(canvas: HTMLCanvasElement): Promise<SculptureView | null> {
-  const m = await loadView();
-  if (!m) return null;
-  try {
-    return new m.SculptureView(canvas);
-  } catch {
-    return null;
-  }
-}
+let viewMod: Promise<typeof import('../shady/SundialView') | null> | null = null;
+const loadView = () => (viewMod ??= import('../shady/SundialView').catch(() => null));
 
 const pad = (n: number) => String(n).padStart(3, '0');
+/** drempels voor de warmtemeter (zonder cijfers: je voelt het, je ziet het niet exact) */
+const HEAT = [0.35, 0.55, 0.72, 0.85, 0.95];
 
 export interface ShadyOpts {
   onPortal: () => void;
@@ -56,9 +57,8 @@ export interface ShadyOpts {
 export function shadyScreen(root: HTMLElement, opts: ShadyOpts): () => void {
   const day = dayString();
   const n = puzzleNumber(day);
-  let view: SculptureView | null = null;
+  let view: SundialView | null = null;
   let dead = false;
-  let raf = 0;
   const timers: number[] = [];
   let keyHandler: ((e: KeyboardEvent) => void) | null = null;
   const setKeys = (f: ((e: KeyboardEvent) => void) | null) => {
@@ -66,12 +66,12 @@ export function shadyScreen(root: HTMLElement, opts: ShadyOpts): () => void {
     keyHandler = f;
     if (f) window.addEventListener('keydown', f);
   };
-  const stopView = () => {
+  const stop = () => {
     view?.destroy();
     view = null;
-    cancelAnimationFrame(raf);
     timers.forEach(clearTimeout);
     timers.length = 0;
+    setKeys(null);
   };
 
   const back = h('button', { class: 'sh-back', type: 'button', 'aria-label': 'Back to doodaloo' }, '← doodaloo');
@@ -82,24 +82,19 @@ export function shadyScreen(root: HTMLElement, opts: ShadyOpts): () => void {
 
   // ---------------- intro ----------------
   function intro() {
-    stopView();
-    setKeys(null);
+    stop();
     const st = loadStore();
-    const today = st.daily[day];
+    const rec = st.daily[day];
     const cd = h('span', null, formatCountdown(msUntilNextDay()));
     const iv = window.setInterval(() => (cd.isConnected ? (cd.textContent = formatCountdown(msUntilNextDay())) : clearInterval(iv)), 1000);
+    const label = rec?.done ? 'See today’s result' : rec?.scores.length ? 'Continue today’s suns' : `Play today’s #${pad(n)}`;
+    const daily = h('button', { class: 'btn primary sh-cta', type: 'button' }, label);
+    daily.addEventListener('click', () => (rec?.done ? end('daily', rec.scores) : play('daily', dailyLevels(day), rec?.scores ?? [])));
+    const free = h('button', { class: 'btn ghost', type: 'button' }, 'Free play');
+    free.addEventListener('click', () => play('free', buildLevels(Math.random), []));
 
-    const daily = h('button', { class: 'btn primary sh-cta', type: 'button' }, today ? `Today: ${today.solved} shadows` : `Daily run #${pad(n)}`);
-    daily.addEventListener('click', () => (today ? end('daily', today.solved, today.bestStreak) : play('daily')));
-    const endless = h('button', { class: 'btn ghost', type: 'button' }, 'Endless');
-    endless.addEventListener('click', () => play('endless'));
-
-    const canvas = h('canvas', { class: 'sh-canvas', 'aria-label': 'A floating block sculpture' });
-    // voorbeeld: het beeld en zijn echte schaduw naast elkaar
-    const demo = makePuzzle(mulberry32(Date.now() % 100000), levelFor(4));
-    const demoShadow = h('div', { class: 'sh-card demo', 'aria-hidden': 'true' });
-    demoShadow.innerHTML = shadowSvg(demo.options[demo.answer], demo.size);
-
+    const art = h('div', { class: 'sh-art', 'aria-hidden': 'true' });
+    art.innerHTML = ART;
     body.replaceChildren(
       h(
         'section',
@@ -107,221 +102,233 @@ export function shadyScreen(root: HTMLElement, opts: ShadyOpts): () => void {
         h(
           'div',
           { class: 'sh-intro-text' },
-          h('span', { class: 'mono sh-kicker' }, 'DOODALOO GAME 02 · SPATIAL'),
+          h('span', { class: 'mono sh-kicker' }, 'DOODALOO GAME 02 · SUNDIAL'),
           h('h1', { class: 'sh-title' }, 'Shady'),
-          h('p', { class: 'sh-lede' }, 'A sculpture floats under the lamp. Four shadows on the wall. ', h('b', null, 'Only one is real'), ' — from any side. Find it before the lamp burns out.'),
+          h('p', { class: 'sh-lede' }, 'You control the sun. Drag it across the sky until the sculpture’s shadow fills the outline on the floor. Then lock it in.'),
           h(
             'ul',
             { class: 'sh-rules' },
-            h('li', null, h('b', null, 'RIGHT'), ' +time'),
-            h('li', null, h('b', { class: 'bad' }, 'WRONG'), ` −${WRONG_PENALTY}s`),
-            h('li', null, h('b', null, 'DRAG'), ' to spin it'),
-            h('li', null, h('b', null, 'IT GETS'), ' nastier'),
+            h('li', null, h('b', null, '↔'), ' sun goes round'),
+            h('li', null, h('b', null, '↕'), ' sun goes up / down'),
+            h('li', null, h('b', null, '5'), ' suns a day'),
           ),
-          h('div', { class: 'sh-actions' }, daily, endless),
-          h('span', { class: 'mono sh-cd' }, st.best ? `PERSONAL BEST ${st.best} · ` : '', 'NEW DAILY RUN IN ', cd),
+          h('div', { class: 'sh-actions' }, daily, free),
+          h('span', { class: 'mono sh-cd' }, st.best ? `PERSONAL BEST ${st.best}/500 · ` : '', 'NEW SUNS IN ', cd),
         ),
-        h('div', { class: 'sh-demo' }, h('div', { class: 'sh-plinth' }, canvas), h('span', { class: 'mono sh-arrow' }, 'CASTS →'), demoShadow),
+        art,
       ),
     );
-    void makeView(canvas).then((v) => {
-      if (dead || !canvas.isConnected) return v?.destroy();
-      view = v;
-      v?.setSculpture(demo.cubes, demo.size);
-    });
   }
 
   // ---------------- spel ----------------
-  function play(mode: 'daily' | 'endless') {
-    stopView();
-    const run = new Run(mode === 'daily' ? dailySeed(day) : Math.floor(Math.random() * 2 ** 31));
-    if (mode === 'daily') {
-      // één poging per dag: meteen vastleggen, zodat herladen geen nieuwe kans geeft
-      const s = loadStore();
-      s.daily[day] = { solved: 0, bestStreak: 0 };
-      saveStore(s);
-    }
+  function play(mode: 'daily' | 'free', levels: Level[], prev: number[]) {
+    stop();
+    const scores = prev.slice();
+    let idx = scores.length;
+    if (idx >= levels.length) return end(mode, scores);
 
-    const fill = h('i', { class: 'sh-lamp-fill' });
-    const timeEl = h('span', { class: 'mono sh-time' });
-    const solvedEl = h('b', { class: 'sh-solved' }, '0');
-    const streakEl = h('span', { class: 'mono sh-streak' });
-    const hud = h(
-      'div',
-      { class: 'sh-hud' },
-      h('div', { class: 'sh-count' }, solvedEl, h('span', { class: 'mono' }, 'SHADOWS')),
-      h('div', { class: 'sh-lamp', role: 'timer', 'aria-label': 'Time left' }, h('span', { class: 'sh-bulb', 'aria-hidden': 'true' }), h('div', { class: 'sh-lamp-bar' }, fill), timeEl),
-      streakEl,
-    );
-    const canvas = h('canvas', { class: 'sh-canvas', 'aria-label': 'The sculpture. Drag to spin it.' });
-    const float = h('span', { class: 'sh-float', 'aria-hidden': 'true' });
-    const plinth = h('div', { class: 'sh-plinth' }, canvas, float, h('span', { class: 'mono sh-hint' }, 'DRAG TO SPIN'));
-    const cards = h('div', { class: 'sh-cards', role: 'group', 'aria-label': 'Which shadow is real?' });
-    const prompt = h('p', { class: 'sh-prompt' }, 'Which shadow can it cast?');
-    body.replaceChildren(h('section', { class: 'sh-play' }, hud, h('div', { class: 'sh-stage' }, plinth, h('div', { class: 'sh-side' }, prompt, cards))));
+    const roundEl = h('span', { class: 'mono' });
+    const totalEl = h('b', { class: 'sh-total' });
+    const segs = HEAT.map(() => h('i'));
+    const meter = h('div', { class: 'sh-heat', 'aria-hidden': 'true' }, ...segs);
+    const pips = h('div', { class: 'sh-pips', 'aria-hidden': 'true' });
+    const hud = h('div', { class: 'sh-hud' }, h('div', { class: 'sh-hud-l' }, roundEl, pips), h('div', { class: 'sh-hud-r' }, h('span', { class: 'mono' }, 'SCORE'), totalEl));
 
-    let locked = false;
-    let paused = true;
+    const canvas = h('canvas', { class: 'sh-canvas', 'aria-label': 'Sundial. Drag to move the sun; arrow keys work too.' });
+    const result = h('div', { class: 'sh-result', 'aria-live': 'polite' });
+    const hint = h('span', { class: 'mono sh-hint' }, 'DRAG ANYWHERE TO MOVE THE SUN');
+    const stage = h('div', { class: 'sh-sky' }, canvas, result, hint);
+    const lock = h('button', { class: 'btn primary sh-lock', type: 'button' }, 'Lock it in');
+    const next = h('button', { class: 'btn primary sh-lock', type: 'button', hidden: true });
+    const bar = h('div', { class: 'sh-bar' }, h('div', { class: 'sh-heat-wrap' }, h('span', { class: 'mono' }, 'MATCH'), meter), lock, next);
+    body.replaceChildren(h('section', { class: 'sh-play' }, hud, stage, bar));
 
-    const render = () => {
-      const p = run.current;
-      view?.setSculpture(p.cubes, p.size);
-      cards.replaceChildren(
-        ...p.options.map((cells, i) => {
-          const b = h('button', { class: 'sh-card', type: 'button', 'aria-label': `Shadow ${i + 1}` }, h('span', { class: 'mono sh-key' }, String(i + 1)));
-          b.insertAdjacentHTML('beforeend', shadowSvg(cells, p.size));
-          b.addEventListener('click', () => choose(i));
-          return b;
-        }),
-      );
-      cards.classList.remove('done');
-      locked = false;
-      paused = false;
+    let level = levels[idx];
+    let target = rasterize(shadowPolys(level.parts, level.target));
+    let match = 0;
+    let heat = -1;
+    let moved = false;
+
+    const renderHud = () => {
+      roundEl.textContent = `SUN ${idx + 1}/${levels.length}`;
+      totalEl.textContent = String(scores.reduce((s, x) => s + x, 0));
+      pips.replaceChildren(...levels.map((_, i) => h('span', { class: `sh-pip${i < scores.length ? (scores[i] >= 90 ? ' ok' : scores[i] >= 60 ? ' mid' : ' bad') : ''}${i === idx ? ' now' : ''}` })));
     };
 
-    const showFloat = (txt: string, cls: string) => {
-      float.textContent = txt;
-      float.className = `sh-float ${cls}`;
-      void float.offsetWidth;
-      float.classList.add('go');
-    };
-
-    const choose = (i: number) => {
-      if (locked || run.over) return;
-      locked = true;
-      paused = true;
-      const p = run.current;
-      const bonus = timeBonus(run.solved);
-      const ok = run.answer(i);
-      const btns = [...cards.querySelectorAll<HTMLButtonElement>('.sh-card')];
-      btns[p.answer].classList.add('right');
-      cards.classList.add('done');
-      view?.showAxis(p.axis);
-      if (ok) {
-        btns[i].classList.add('pop');
-        showFloat(`+${bonus.toFixed(1)}s`, 'ok');
-        sfx.tick(run.streak);
-        if (run.streak > 0 && run.streak % 5 === 0) {
-          sfx.jingle(true);
-          const r = plinth.getBoundingClientRect();
-          confetti((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight, 70);
+    // live meten terwijl je sleept, hooguit één keer per frame
+    let pending = false;
+    const onSun = () => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        if (!view || view.locked) return;
+        match = iou(target, rasterize(shadowPolys(level.parts, view.sun)));
+        const lv = HEAT.filter((t) => match >= t).length;
+        if (lv !== heat) {
+          if (lv > heat && heat >= 0) {
+            sfx.tick(lv * 2);
+            buzz(lv >= 5 ? [10, 30, 10] : 6);
+          }
+          heat = lv;
+          segs.forEach((s, i) => s.classList.toggle('on', i < lv));
+          meter.classList.toggle('hot', lv >= 5);
+          view.drawTarget(lv >= 5 ? 1 : lv / 5);
         }
-        buzz(15);
-        announce('Right.');
-      } else {
-        btns[i].classList.add('wrong');
-        showFloat(`−${WRONG_PENALTY}s`, 'bad');
-        sfx.fail();
-        buzz([50, 30, 50]);
-        announce(`Wrong. It was shadow ${p.answer + 1}.`);
-      }
-      solvedEl.textContent = String(run.solved);
-      streakEl.textContent = run.streak >= 2 ? `${run.streak} IN A ROW` : '';
-      streakEl.classList.toggle('hot', run.streak >= 5);
-      updateLamp();
-      // even laten zien vanwaar de schaduw kwam, dan door
-      timers.push(window.setTimeout(() => (run.over ? finish() : render()), ok ? 650 : 1500));
-    };
-
-    const updateLamp = () => {
-      fill.style.transform = `scaleX(${run.time / MAX_TIME})`;
-      timeEl.textContent = `${run.time.toFixed(1)}s`;
-      hud.classList.toggle('low', run.time < 10);
-    };
-
-    let last = performance.now();
-    const loop = (now: number) => {
-      raf = requestAnimationFrame(loop);
-      const dt = Math.min(0.25, (now - last) / 1000);
-      last = now;
-      if (!paused && !document.hidden) {
-        run.tick(dt);
-        updateLamp();
-        if (run.over) {
-          paused = true;
-          locked = true;
-          finish();
+        if (!moved) {
+          moved = true;
+          hint.classList.add('gone');
         }
-      }
+      });
     };
 
-    const finish = () => {
-      cancelAnimationFrame(raf);
-      setKeys(null);
-      sfx.whoosh();
-      const s = loadStore();
-      s.runs++;
-      s.best = Math.max(s.best, run.solved);
-      if (mode === 'daily') s.daily[day] = { solved: run.solved, bestStreak: run.bestStreak };
-      saveStore(s);
-      body.classList.add('lights-out');
+    const startLevel = () => {
+      level = levels[idx];
+      target = rasterize(shadowPolys(level.parts, level.target));
+      heat = -1;
+      result.className = 'sh-result';
+      result.replaceChildren();
+      lock.hidden = false;
+      next.hidden = true;
+      renderHud();
+      view?.setLevel(level.parts, shadowPolys(level.parts, level.target), level.start);
+    };
+
+    const doLock = () => {
+      if (!view || view.locked) return;
+      view.locked = true;
+      const mine: Sun = { ...view.sun };
+      const sc = matchScore(iou(target, rasterize(shadowPolys(level.parts, mine))));
+      scores.push(sc);
+      lock.hidden = true;
+      // toon waar de zon echt stond: de schaduw schuift in de vorm
+      if (sc < 100) timers.push(window.setTimeout(() => view?.animateTo(level.target, 1200), 900));
+      view.drawTarget(1);
+      result.replaceChildren(h('b', null, `${sc}%`), h('span', null, roundLine(sc)));
+      result.className = `sh-result show ${sc >= 90 ? 'ok' : sc >= 60 ? 'mid' : 'bad'}`;
+      announce(`${sc} percent. ${roundLine(sc)}`);
+      if (sc >= 100) {
+        sfx.jingle(true);
+        buzz([20, 40, 20, 40, 60]);
+        const r = stage.getBoundingClientRect();
+        confetti((r.left + r.width / 2) / innerWidth, (r.top + r.height * 0.6) / innerHeight, 140);
+      } else if (sc >= 75) {
+        sfx.jingle(false);
+        buzz(20);
+      } else sfx.fail();
+      if (mode === 'daily') {
+        const s = loadStore();
+        s.daily[day] = { scores: scores.slice(), done: scores.length >= levels.length };
+        saveStore(s);
+      }
+      renderHud();
+      const last = scores.length >= levels.length;
+      next.textContent = last ? 'See your score →' : 'Next sun →';
       timers.push(
         window.setTimeout(() => {
-          body.classList.remove('lights-out');
-          end(mode, run.solved, run.bestStreak);
-        }, 900),
+          next.hidden = false;
+          next.focus({ preventScroll: true });
+        }, 600),
       );
     };
 
+    lock.addEventListener('click', doLock);
+    next.addEventListener('click', () => {
+      if (scores.length >= levels.length) return end(mode, scores);
+      idx++;
+      startLevel();
+    });
     setKeys((e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const k = Number(e.key);
-      if (k >= 1 && k <= 4) choose(k - 1);
+      const step = e.shiftKey ? 0.01 : 0.05;
+      if (e.key === 'ArrowLeft') view?.nudge(-step, 0);
+      else if (e.key === 'ArrowRight') view?.nudge(step, 0);
+      else if (e.key === 'ArrowUp') view?.nudge(0, step * 0.7);
+      else if (e.key === 'ArrowDown') view?.nudge(0, -step * 0.7);
+      else if (e.key === 'Enter' || e.key === ' ') {
+        if (!lock.hidden) doLock();
+        else if (!next.hidden) next.click();
+      } else return;
+      e.preventDefault();
     });
 
-    updateLamp();
-    void makeView(canvas).then((v) => {
-      if (dead || !canvas.isConnected) return v?.destroy();
-      view = v;
-      if (!v) plinth.append(h('p', { class: 'sh-nogl' }, 'Your browser can’t show 3D. Shady needs WebGL.'));
-      render();
-      last = performance.now();
-      raf = requestAnimationFrame(loop);
+    renderHud();
+    void loadView().then((m) => {
+      if (dead || !canvas.isConnected) return;
+      try {
+        if (!m) throw new Error('no 3d');
+        view = new m.SundialView(canvas, onSun);
+        startLevel();
+      } catch {
+        stage.append(h('p', { class: 'sh-nogl' }, 'Your browser can’t show 3D. Shady needs WebGL.'));
+      }
     });
   }
 
   // ---------------- einde ----------------
-  function end(mode: 'daily' | 'endless', solved: number, bestStreak: number) {
-    stopView();
-    setKeys(null);
+  function end(mode: 'daily' | 'free', scores: number[]) {
+    stop();
+    const total = scores.reduce((s, x) => s + x, 0);
     const st = loadStore();
+    const isBest = total > st.best;
+    if (isBest) {
+      st.best = total;
+      saveStore(st);
+    }
     const shareBtn = h('button', { class: 'btn primary', type: 'button' }, 'Share');
     const note = h('span', { class: 'mono sh-note', 'aria-live': 'polite' });
     shareBtn.addEventListener('click', async () => {
-      const r = await shareResult(shadyShare(mode === 'daily' ? n : null, solved, bestStreak));
+      const r = await shareResult(shadyShare(mode === 'daily' ? n : null, scores));
       note.textContent = r === 'copied' ? 'COPIED' : r === 'shared' ? 'SHARED' : '';
     });
-    const again = h('button', { class: 'btn ghost', type: 'button' }, mode === 'daily' ? 'Play endless' : 'Again');
-    again.addEventListener('click', () => play('endless'));
+    const again = h('button', { class: 'btn ghost', type: 'button' }, 'Free play');
+    again.addEventListener('click', () => play('free', buildLevels(Math.random), []));
     const home = h('button', { class: 'btn ghost', type: 'button' }, 'Other games');
     home.addEventListener('click', opts.onPortal);
-    const isBest = solved > 0 && solved >= st.best;
     body.replaceChildren(
       h(
         'section',
         { class: 'sh-end' },
-        h('span', { class: 'mono sh-kicker' }, mode === 'daily' ? `SHADY #${pad(n)} · LAMP OUT` : 'ENDLESS · LAMP OUT'),
-        h('div', { class: 'sh-big' }, h('b', null, String(solved)), h('span', null, solved === 1 ? 'shadow' : 'shadows')),
-        h('p', { class: 'sh-verdict' }, shadyVerdict(solved)),
+        h('span', { class: 'mono sh-kicker' }, mode === 'daily' ? `SHADY #${pad(n)} · SUNSET` : 'FREE PLAY · SUNSET'),
+        h('div', { class: 'sh-big' }, h('b', null, String(total)), h('span', null, `/${LEVELS * 100}`)),
+        h('p', { class: 'sh-verdict' }, shadyVerdict(total)),
+        h('div', { class: 'sh-squares' }, scores.map(shadySquare).join('')),
         h(
-          'div',
-          { class: 'sh-stats' },
-          h('div', null, h('b', null, String(bestStreak)), h('span', { class: 'mono' }, 'BEST STREAK')),
-          h('div', null, h('b', { class: isBest ? 'lime' : '' }, String(st.best)), h('span', { class: 'mono' }, isBest ? 'NEW BEST' : 'PERSONAL BEST')),
-          h('div', null, h('b', null, String(st.runs)), h('span', { class: 'mono' }, 'RUNS')),
+          'ol',
+          { class: 'sh-bars' },
+          ...scores.map((s, i) =>
+            h('li', null, h('span', { class: 'mono' }, `SUN ${i + 1}`), h('i', { style: `--w:${s}%`, class: s >= 90 ? 'ok' : s >= 60 ? 'mid' : 'bad' }), h('b', { class: 'mono' }, `${s}%`)),
+          ),
         ),
+        isBest && total > 0 ? h('span', { class: 'mono sh-best' }, 'NEW PERSONAL BEST') : null,
         h('div', { class: 'sh-actions' }, shareBtn, again, home),
         note,
-        mode === 'daily' ? h('span', { class: 'mono sh-cd' }, 'SAME SCULPTURES FOR EVERYONE TODAY. COMPARE.') : null,
       ),
     );
-    if (isBest && solved >= 5) confetti(0.5, 0.3, 160);
+    if (total >= 450) confetti(0.5, 0.3, 160);
   }
 
   intro();
   return () => {
     dead = true;
-    stopView();
-    setKeys(null);
+    stop();
   };
 }
+
+/** Kleine illustratie voor de intro: zon, beeld, schaduw en doelvorm. */
+export const ART = `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient id="sg" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff6d0"/><stop offset="0.35" stop-color="#ffd27a" stop-opacity="0.8"/><stop offset="1" stop-color="#ff9a3d" stop-opacity="0"/></radialGradient>
+<linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6defc"/><stop offset="1" stop-color="#b9a9ee"/></linearGradient>
+<linearGradient id="bx" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c9b8ff"/><stop offset="1" stop-color="#6f4fe0"/></linearGradient>
+</defs>
+<ellipse cx="200" cy="215" rx="185" ry="70" fill="url(#fl)"/>
+<path class="art-target" d="M190 222 L300 252 L330 236 L262 214 L262 200 L226 192 Z" fill="rgba(126,232,226,0.25)" stroke="#40c8dc" stroke-width="3" stroke-linejoin="round"/>
+<path class="art-shadow" d="M190 222 L292 250 L322 236 L258 216 L258 202 L224 194 Z" fill="#1a1430" opacity="0.85"/>
+<rect x="186" y="150" width="6" height="72" fill="#2a2440"/>
+<rect x="165" y="110" width="44" height="44" rx="6" fill="url(#bx)"/>
+<rect x="165" y="70" width="44" height="44" rx="6" fill="url(#bx)"/>
+<rect x="205" y="110" width="44" height="44" rx="6" fill="url(#bx)"/>
+<circle class="art-sun" cx="70" cy="60" r="46" fill="url(#sg)"/>
+<circle cx="70" cy="60" r="14" fill="#fff3c4"/>
+<path d="M60 40 Q 200 -10 330 60" fill="none" stroke="#ffd27a" stroke-opacity="0.4" stroke-dasharray="4 6"/>
+</svg>`;

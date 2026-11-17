@@ -2,7 +2,7 @@ import { dayString, puzzleNumber, msUntilNextDay } from '../game/seed';
 import { formatCountdown, soundButton } from './common';
 import { barcode, ticker } from './decor';
 import { h } from './dom';
-import { shadowSvg } from '../shady/shadowSvg';
+import { ART as SHADY_ART } from './shadyScreen';
 
 export interface PortalOpts {
   onWeigh: () => void;
@@ -51,16 +51,14 @@ export function portalScreen(root: HTMLElement, opts: PortalOpts): () => void {
 
   const weighArt = h('div', { class: 'q-weigh' }, h('img', { src: `${BASE}objects/nijlpaard.webp`, alt: '' }), h('span', { class: 'q-beam' }), h('span', { class: 'mono q-q' }, '? kg'));
   const shadyArt = h('div', { class: 'q-shady' });
-  shadyArt.innerHTML = ['a', 'b', 'c']
-    .map((k, i) => `<div class="q-sc q-sc-${k}${i === 1 ? ' real' : ''}">${shadowSvg(i === 0 ? [[0, 0], [1, 0], [1, 1], [2, 1]] : i === 1 ? [[0, 0], [0, 1], [1, 1], [1, 2], [2, 1]] : [[0, 0], [1, 0], [2, 0], [2, 1]], 3)}</div>`)
-    .join('');
+  shadyArt.innerHTML = SHADY_ART;
   const lockedArt = h('div', { class: 'q-locked' }, h('span', null, '?'));
 
   const games = h(
     'section',
     { class: 'q-games', 'aria-label': 'Games' },
     card({ num: '01', title: 'Weight For It', desc: 'Guess how heavy it is. Load the scale. Get roasted.', tag: 'DAILY', art: weighArt, onClick: opts.onWeigh, cls: 'c-weigh' }),
-    card({ num: '02', title: 'Shady', desc: 'One shadow is real. Three are liars. Beat the lamp.', tag: 'NEW', art: shadyArt, onClick: opts.onShady, cls: 'c-shady' }),
+    card({ num: '02', title: 'Shady', desc: 'Move the sun. Make the shadow fit the shape.', tag: 'NEW', art: shadyArt, onClick: opts.onShady, cls: 'c-shady' }),
     card({ num: '03', title: 'Coming soon', desc: 'Something with sound. Or tempo. Not telling.', tag: 'SOON', art: lockedArt, cls: 'c-soon' }),
   );
 
