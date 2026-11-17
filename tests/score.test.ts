@@ -48,3 +48,17 @@ describe('scoreSquare', () => {
     expect(scoreSquare(29)).toBe('🟥');
   });
 });
+
+import { roastLine, moodFor } from '../src/game/roast';
+describe('roastLine', () => {
+  it('vult de factor en gewichten in', () => {
+    const line = roastLine({ objectId: 'x', guess: 1000, actual: 10, score: 0 }, () => 0);
+    expect(line).toContain('100×');
+    expect(line).not.toContain('{');
+  });
+  it('kiest een stemming per score', () => {
+    expect(moodFor(100)).toBe('cool');
+    expect(moodFor(95)).toBe('happy');
+    expect(moodFor(0)).toBe('dead');
+  });
+});

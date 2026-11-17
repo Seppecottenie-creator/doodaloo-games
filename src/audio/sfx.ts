@@ -1,3 +1,5 @@
+import { WEIGHT_SPECS } from '../game/config';
+
 /** Alle geluiden worden live gesynthetiseerd met Web Audio: geen samples, geen auteursrecht. */
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -72,6 +74,9 @@ export function clink(idx: number, strength = 1) {
   if (!c) return;
   const t = c.currentTime;
   const v = 0.15 + 0.25 * strength;
+  // index op een schaal 0–9 brengen, ongeacht hoeveel gewichten er zijn
+  const heft = WEIGHT_SPECS[idx]?.heft ?? 0.5;
+  idx = Math.round(heft * 9);
   if (idx <= 2) {
     const f0 = 2900 - idx * 550 + Math.random() * 120;
     [1, 2.76, 5.4].forEach((r, i) => tone(f0 * r, t, 0.35 / (i + 1), v / (i + 1.5)));
@@ -183,4 +188,36 @@ export function fail() {
     const o = tone(f, t + i * 0.2, 0.3, 0.1, 'triangle', 0.01);
     o.frequency.linearRampToValueAtTime(f * 0.94, t + i * 0.2 + 0.3);
   });
+}
+
+/** Zwiep voor de ronde-intro. */
+export function whoosh() {
+  const c = ready();
+  if (!c) return;
+  const t = c.currentTime;
+  const f = noise(t, 0.35, 0.12, 'bandpass', 300, 1.2);
+  f.frequency.exponentialRampToValueAtTime(2400, t + 0.3);
+}
+
+/** Cartoon-"boing" als je het hoofd van de balans aantikt. */
+export function boing() {
+  const c = ready();
+  if (!c) return;
+  const t = c.currentTime;
+  const o = c.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(180, t);
+  o.frequency.exponentialRampToValueAtTime(520, t + 0.08);
+  o.frequency.exponentialRampToValueAtTime(260, t + 0.3);
+  const lfo = c.createOscillator();
+  lfo.frequency.value = 28;
+  const lg = c.createGain();
+  lg.gain.value = 40;
+  lfo.connect(lg).connect(o.frequency);
+  const g = env(c, t, 0.22, 0.005, 0.35);
+  o.connect(g).connect(master!);
+  o.start(t);
+  lfo.start(t);
+  o.stop(t + 0.4);
+  lfo.stop(t + 0.4);
 }

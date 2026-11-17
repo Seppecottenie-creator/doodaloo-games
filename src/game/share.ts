@@ -1,7 +1,7 @@
 import { CONFIG } from './config';
 import { maxTotal, scoreSquare } from './score';
 import type { GameObject, RoundResult } from './types';
-import { t } from '../i18n/nl';
+import { t } from '../i18n';
 
 export function shareText(number: number | null, results: RoundResult[], objects: GameObject[]): string {
   const total = results.reduce((s, r) => s + r.score, 0);
