@@ -206,9 +206,26 @@ function hologramTexture(title: string, sub: string, glyph: string) {
     c.fillStyle = '#7EE8E2';
     c.font = '700 30px "JetBrains Mono", monospace';
     c.fillText(sub.toUpperCase(), 256, 70);
-    c.font = '220px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-    c.fillStyle = '#fff';
-    c.fillText(glyph, 256, 290);
+    // monogram in kleurverloop, geen emoji
+    const words = title.replace(/[()’'.]/g, '').split(/\s+/).filter((w) => /^[A-Za-zÀ-ÿ0-9]/.test(w));
+    const mono = (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '?').slice(0, 2)).toUpperCase();
+    void glyph;
+    c.font = '900 210px Inter, system-ui, sans-serif';
+    const mg = c.createLinearGradient(80, 180, 430, 400);
+    mg.addColorStop(0, '#ffffff');
+    mg.addColorStop(0.55, '#B79CFF');
+    mg.addColorStop(1, '#7EE8E2');
+    c.fillStyle = mg;
+    c.fillText(mono, 256, 300);
+    c.strokeStyle = 'rgba(255,255,255,0.18)';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(60, 430);
+    c.lineTo(452, 430);
+    c.stroke();
+    c.font = '700 22px "JetBrains Mono", monospace';
+    c.fillStyle = 'rgba(169,164,192,0.8)';
+    c.fillText('SPECIMEN · OFFICIAL WEIGHT ON FILE', 256, 465);
     c.font = '800 64px Inter, system-ui, sans-serif';
     let size = 64;
     while (c.measureText(title).width > 440 && size > 28) {
@@ -1013,10 +1030,10 @@ export class ScaleView3D implements ScaleLike {
       tex.colorSpace = SRGBColorSpace;
       tex.anisotropy = 4;
       // groot genoeg om duidelijk te zien; brede dingen mogen iets over de rand
-      let hh = card ? 1.05 : 1.25;
+      let hh = card ? 1.05 : 1.2;
       let ww = hh * aspect;
-      if (ww > 1.7) {
-        ww = 1.7;
+      if (ww > 1.45) {
+        ww = 1.45;
         hh = ww / aspect;
       }
       const geo = new PlaneGeometry(ww, hh);

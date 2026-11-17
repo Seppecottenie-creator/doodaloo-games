@@ -13,7 +13,7 @@ import { confetti } from './confetti';
 import { announce, h, reducedMotion, tween } from './dom';
 import { soundButton } from './common';
 import { Bubble } from './bubble';
-import { barcode, spinBadge, sticker, ticker } from './decor';
+import { barcode, monogram, spinBadge, sticker, ticker } from './decor';
 
 export interface GameScreenOpts {
   session: Session;
@@ -55,7 +55,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   const panA = h('span', { class: 'stage-label mono left' }, 'PAN A · LOCKED');
   const panB = h('span', { class: 'stage-label mono right' }, 'PAN B · 0 ITEMS');
   const credit = h('p', { class: 'credit' });
-  const peek = sticker('NO PEEKING', 's-pink peek', '--r:7deg');
+  const peek = sticker('SEALED · NO PEEKING', 's-pink peek', '--r:0deg');
   const stage = h(
     'div',
     { class: 'stage' },
@@ -65,7 +65,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     h('span', { class: 'corner tr', 'aria-hidden': 'true' }),
     h('span', { class: 'corner bl', 'aria-hidden': 'true' }),
     h('span', { class: 'corner br', 'aria-hidden': 'true' }),
-    spinBadge('WEIGH IT ✦ WEIGH IT ✦ WEIGH IT ✦ ', '⚖', 'stage-badge'),
+    spinBadge('CALIBRATED · WEIGHT · INSTRUMENT · ', '◆', 'stage-badge'),
     peek,
     panA,
     panB,
@@ -214,7 +214,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     descEl.textContent = o.description;
     credit.textContent = o.credit ? `Photo: ${o.credit.author} · ${o.credit.license}` : '';
     // scherpe afbeelding naast de naam (alleen zichtbaar op brede schermen)
-    thumbEl.replaceChildren(o.image ? h('img', { src: `${import.meta.env.BASE_URL}${o.image}`, alt: '' }) : h('span', { class: 'thumb-glyph' }, o.emoji));
+    thumbEl.replaceChildren(o.image ? h('img', { src: `${import.meta.env.BASE_URL}${o.image}`, alt: '' }) : h('span', { class: 'thumb-glyph' }, monogram(o.name)));
     card.classList.remove('enter');
     void card.offsetWidth;
     card.classList.add('enter');
