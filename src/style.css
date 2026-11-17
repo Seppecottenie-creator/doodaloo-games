@@ -2417,6 +2417,410 @@ body::after {
   text-shadow: 0 0 60px rgba(183, 156, 255, 0.25);
 }
 
+/* ---------- impact: immersieve 3D, glas, reuzetypografie ---------- */
+.bubble {
+  background: rgba(10, 9, 18, 0.78);
+  color: var(--ink);
+  border: 1px solid rgba(183, 156, 255, 0.45);
+  border-left: 3px solid var(--lilac);
+  border-radius: 8px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.9), 0 0 40px -10px rgba(183, 156, 255, 0.45);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bubble::after {
+  display: none;
+}
+.bubble-label {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  color: var(--lilac);
+}
+.p-say {
+  display: none;
+}
+
+/* verdict boven alles; onthulling ondoorzichtig genoeg */
+.game {
+  position: relative;
+}
+.game > .bubble {
+  position: absolute !important;
+  z-index: 8;
+  height: auto;
+}
+.sheet {
+  background: rgba(11, 10, 18, 0.94) !important;
+}
+
+/* gsm: stage tot aan de randen, titel over de 3D-scène */
+@media (max-width: 899px) {
+  .game {
+    grid-template-areas: 'hud' 'tick' 'stage' 'readout' 'bottom';
+    grid-template-rows: auto auto minmax(250px, 1fr) auto auto;
+  }
+  .hud {
+    grid-area: hud;
+  }
+  .game-ticker {
+    grid-area: tick;
+  }
+  .stage {
+    grid-area: stage;
+    margin: 0 -14px;
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
+  }
+  .obj-card {
+    grid-area: stage;
+    align-self: start;
+    z-index: 3;
+    pointer-events: none;
+    padding: 12px 2px 0;
+  }
+  .obj-desc {
+    display: none;
+  }
+  .obj-name {
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.9);
+  }
+  .obj-name.long {
+    font-size: clamp(1.6rem, 7.5vw, 2rem);
+  }
+  .readout {
+    grid-area: readout;
+  }
+  .bottom {
+    grid-area: bottom;
+  }
+  .stage-label {
+    top: auto;
+    bottom: 10px;
+  }
+  .credit {
+    top: auto;
+    bottom: 26px;
+  }
+  .peek {
+    top: auto;
+    bottom: 40px;
+  }
+  .stage-badge,
+  .ruler {
+    display: none;
+  }
+  .stage-hint {
+    bottom: 56px;
+  }
+}
+
+/* pc: de balans is het hele scherm, panelen zweven erboven */
+@media (min-width: 900px) {
+  .game {
+    position: relative;
+  }
+  .game > * {
+    position: relative;
+    z-index: 2;
+  }
+  .game > .stage {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #050507;
+  }
+  .stage .corner.tl,
+  .stage .corner.bl {
+    left: 28px;
+  }
+  .stage .corner.tl,
+  .stage .corner.tr {
+    top: 110px;
+  }
+  .stage-label {
+    top: 120px;
+  }
+  .stage-label.left {
+    left: 46px;
+  }
+  .stage-label.right {
+    right: auto;
+    left: 46px;
+    top: 140px;
+  }
+  .credit {
+    left: 46px;
+    top: 160px;
+  }
+  .peek {
+    right: auto;
+    left: 46px;
+    top: 186px;
+  }
+  .stage-badge {
+    left: 40px;
+    bottom: 40px;
+    width: 84px;
+    height: 84px;
+  }
+  .ruler {
+    left: 14px;
+    top: 120px;
+    bottom: 60px;
+  }
+  .obj-card,
+  .panel,
+  .sheet {
+    background: rgba(11, 10, 18, 0.62) !important;
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: inset 0 0 0 1px rgba(183, 156, 255, 0.22), 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+  }
+  .readout,
+  .bottom {
+    background: rgba(11, 10, 18, 0.5);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: inset 0 0 0 1px rgba(183, 156, 255, 0.16);
+  }
+  .w-btn {
+    background: rgba(18, 16, 28, 0.75);
+  }
+  .obj-name,
+  .obj-name.long {
+    font-size: clamp(2.2rem, 3.2vw, 3.4rem);
+  }
+  .total {
+    font-size: clamp(3.4rem, 5vw, 5rem);
+  }
+}
+
+/* portaal: filmische hero */
+.x-hero {
+  position: relative;
+  height: min(78vh, 760px);
+  min-height: 520px;
+  margin: 0 -14px;
+  overflow: hidden;
+  border-block: 1px solid var(--line);
+}
+.x-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-out);
+}
+.x-canvas.ready {
+  opacity: 1;
+}
+.x-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 7, 0.85), transparent 22%, transparent 55%, rgba(5, 5, 7, 0.95)),
+    radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(5, 5, 7, 0.7));
+}
+.x-top {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+.x-kicker {
+  font-size: 0.6rem;
+  color: var(--muted);
+}
+.x-kicker.right {
+  color: var(--aqua);
+  text-align: right;
+}
+.x-bottom {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.x-title {
+  margin: 0;
+  font-size: clamp(3.4rem, 16.5vw, 15rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.78;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.x-solid {
+  background: linear-gradient(180deg, #fff 30%, #cfc2ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.x-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--lilac);
+  filter: drop-shadow(0 0 24px rgba(183, 156, 255, 0.6));
+}
+.x-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 14px;
+}
+.x-lede {
+  margin: 0;
+  max-width: 34ch;
+  color: #d6d2e6;
+  font-size: 1.02rem;
+  line-height: 1.4;
+}
+.x-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.x-play {
+  padding: 1rem 1.4rem;
+  font-size: 1.05rem;
+}
+.x-cd {
+  font-size: 0.6rem;
+  color: var(--dim);
+}
+.x-games {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+}
+.x-games-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.6rem;
+  color: var(--dim);
+  padding: 12px 2px;
+}
+.x-game {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  grid-template-areas: 'num name arrow' 'num desc status';
+  align-items: baseline;
+  gap: 2px 12px;
+  padding: 18px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  color: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+.x-game.live {
+  cursor: pointer;
+}
+.x-game::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(126, 232, 226, 0.12), rgba(183, 156, 255, 0.16), rgba(226, 92, 241, 0.1));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+.x-game.live:hover::before {
+  transform: scaleX(1);
+}
+.x-num {
+  grid-area: num;
+  font-size: 0.7rem;
+  color: var(--dim);
+}
+.x-name {
+  grid-area: name;
+  font-size: clamp(2.4rem, 11vw, 6rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+  position: relative;
+}
+.x-game:not(.live) .x-name {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(169, 164, 192, 0.6);
+}
+.x-desc {
+  grid-area: desc;
+  color: var(--muted);
+  font-size: 0.92rem;
+  position: relative;
+}
+.x-status {
+  grid-area: status;
+  font-size: 0.6rem;
+  color: var(--dim);
+  justify-self: end;
+  position: relative;
+}
+.x-status.on {
+  color: var(--lime);
+}
+.x-arrow {
+  grid-area: arrow;
+  font-size: 2rem;
+  justify-self: end;
+  color: var(--lilac);
+  transition: transform 0.4s var(--spring);
+  position: relative;
+}
+.x-game.live:hover .x-arrow {
+  transform: translateX(8px);
+}
+@media (min-width: 900px) {
+  .x-hero {
+    margin: 0 -40px;
+    height: min(84vh, 820px);
+  }
+  .x-top {
+    left: 40px;
+    right: 40px;
+  }
+  .x-bottom {
+    left: 40px;
+    right: 40px;
+    bottom: 34px;
+  }
+  .x-game {
+    grid-template-columns: 70px 1fr 1fr 160px 60px;
+    grid-template-areas: 'num name desc status arrow';
+    align-items: center;
+    padding: 26px 8px;
+  }
+  .x-desc {
+    font-size: 1rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

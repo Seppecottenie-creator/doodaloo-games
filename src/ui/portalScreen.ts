@@ -1,21 +1,10 @@
 import { dayString, puzzleNumber, msUntilNextDay } from '../game/seed';
 import { load } from '../game/storage';
-import * as sfx from '../audio/sfx';
-import { buzz } from '../game/haptics';
-import { pick } from '../game/roast';
-import { createScale, noodlePortrait } from '../scale';
+import { createScale } from '../scale';
 import type { ScaleLike } from '../scale/types';
 import { formatCountdown, soundButton } from './common';
-import { barcode, spinBadge, sticker, ticker } from './decor';
+import { barcode, sticker, ticker } from './decor';
 import { h } from './dom';
-
-const NOODLE_LINES = [
-  'I’m Noodle. I judge things.',
-  'Sunglasses stay on. Indoors. Always.',
-  'Pick a game. Disappoint me.',
-  'I don’t do smiles. I do verdicts.',
-  'More games coming. Probably. Maybe.',
-];
 
 export interface PortalOpts {
   onWeegschaal: () => void;
@@ -26,92 +15,86 @@ export function portalScreen(root: HTMLElement, opts: PortalOpts): () => void {
   const n = puzzleNumber(dayString());
   const plays = Object.values(st.daily).filter((d) => d.done).length + st.practice.played;
 
-  const star = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z" fill="#B79CFF"/></svg>';
+  const star = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z" fill="#B79CFF"/></svg>';
   const brand = h('div', { class: 'wordmark' });
   brand.innerHTML = `${star}<span>doodaloo</span>`;
 
-  // Noodle als portret, met tekstballon
-  const noodleImg = h('img', { class: 'p-noodle-img', alt: 'Noodle, the doodaloo mascot, wearing sunglasses' });
-  const say = h('div', { class: 'p-say' }, NOODLE_LINES[0]);
-  const noodle = h('button', { class: 'p-noodle', type: 'button', 'aria-label': 'Poke Noodle' }, noodleImg);
-  noodle.addEventListener('click', () => {
-    sfx.unlockAudio();
-    sfx.boing();
-    buzz(10);
-    noodle.classList.remove('boing');
-    void noodle.offsetWidth;
-    noodle.classList.add('boing');
-    say.textContent = pick(NOODLE_LINES.filter((l) => l !== say.textContent));
-  });
-  void noodlePortrait().then((url) => {
-    if (url) noodleImg.src = url;
-    else noodle.classList.add('fallback');
-  });
-
-  const hero = h(
-    'section',
-    { class: 'p-hero' },
-    h('div', { class: 'p-hero-text' },
-      h('span', { class: 'p-kicker mono' }, 'GAMES THAT JUDGE YOU · EST. 2026'),
-      h('h1', { class: 'p-title' }, h('span', null, 'dooda'), h('span', { class: 'accent' }, 'loo')),
-      h('p', { class: 'p-lede' }, 'Tiny daily games. Big opinions. One very cool pill in sunglasses.'),
-      h('div', { class: 'p-chips' }, h('span', { class: 'chip live' }, '● 1 LIVE'), h('span', { class: 'chip' }, '2 IN THE LAB'), h('span', { class: 'chip' }, 'FREE · NO ACCOUNT')),
-    ),
-    h('div', { class: 'p-hero-art' }, noodle, say, spinBadge('MORE GAMES IN DEVELOPMENT · ', '◆', 'p-badge'), sticker('CERTIFIED JUDGE', 's-lime', 'right:4%;top:6%;--r:0deg'), sticker('PROTOTYPE 0.4', 's-pink', 'left:2%;bottom:14%;--r:0deg')),
-  );
-
-  // Weegschaal-kaart met live balans
   const cd = h('span', null, formatCountdown(msUntilNextDay()));
   const iv = window.setInterval(() => (cd.textContent = formatCountdown(msUntilNextDay())), 1000);
-  const canvas = h('canvas', { class: 'p-canvas', role: 'img', 'aria-label': 'Weegschaal preview: a chrome balance scale' });
-  const play = h('button', { class: 'btn primary p-play', type: 'button' }, 'Play Weegschaal ', h('span', { 'aria-hidden': 'true' }, '→'));
-  play.addEventListener('click', opts.onWeegschaal);
-  const wCard = h(
-    'article',
-    { class: 'g-card g-main' },
-    h('div', { class: 'g-top' }, h('span', { class: 'chip live' }, '● LIVE'), h('span', { class: 'mono g-num' }, `GAME 01 · DAILY #${String(n).padStart(3, '0')}`)),
-    h('div', { class: 'g-art' }, canvas, sticker('RELEASE 01', 's-aqua', 'left:16px;top:14px;--r:0deg'), barcode('WGS-001')),
-    h('h2', { class: 'g-title' }, 'weeg', h('span', { class: 'accent' }, 'schaal')),
-    h('p', { class: 'g-desc' }, 'Something lands on the scale. Guess its weight with real weights. An elephant, a Pikachu, the Eiffel Tower. Get roasted.'),
-    h('div', { class: 'g-meta mono' }, h('span', null, '5 ROUNDS'), h('span', null, '66 OBJECTS'), h('span', null, 'NEXT IN ', cd)),
-    play,
-  );
-  wCard.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('button')) return;
-    opts.onWeegschaal();
-  });
 
-  const soon = (num: string, title: string, desc: string, art: HTMLElement, cls: string) =>
-    h('article', { class: `g-card g-soon ${cls}` }, h('div', { class: 'g-top' }, h('span', { class: 'chip' }, 'IN THE LAB'), h('span', { class: 'mono g-num' }, num)), h('div', { class: 'g-art small' }, art), h('h3', { class: 'g-title small' }, title), h('p', { class: 'g-desc' }, desc));
-  const shadowArt = h('div', { class: 'art-shadow' }, h('span', { class: 'sil' }), h('span', { class: 'q' }, '?'));
-  const labArt = h('div', { class: 'art-lab' }, h('span', { class: 'stripe' }), h('span', { class: 'q mono' }, 'CLASSIFIED'));
+  // filmische hero: live balans over de volle breedte, reuzetitel eroverheen
+  const canvas = h('canvas', { class: 'x-canvas', role: 'img', 'aria-label': 'A chrome balance scale, live' });
+  const play = h('button', { class: 'btn primary x-play', type: 'button' }, `Play today’s #${String(n).padStart(3, '0')}`, h('span', { 'aria-hidden': 'true' }, ' →'));
+  play.addEventListener('click', opts.onWeegschaal);
+  const hero = h(
+    'section',
+    { class: 'x-hero' },
+    canvas,
+    h('div', { class: 'x-vignette', 'aria-hidden': 'true' }),
+    h(
+      'div',
+      { class: 'x-top' },
+      h('span', { class: 'mono x-kicker' }, 'DOODALOO / GAMES THAT JUDGE YOU'),
+      h('span', { class: 'mono x-kicker right' }, 'NOW PLAYING — WEEGSCHAAL'),
+    ),
+    sticker('LIVE · DAILY', 's-lime', 'left:20px;top:64px'),
+    sticker('NEXT DROP ', 's-aqua', 'right:20px;top:64px'),
+    h(
+      'div',
+      { class: 'x-bottom' },
+      h('h1', { class: 'x-title' }, h('span', { class: 'x-solid' }, 'DOODA'), h('span', { class: 'x-outline' }, 'LOO')),
+      h(
+        'div',
+        { class: 'x-row' },
+        h('p', { class: 'x-lede' }, 'Daily games with real stakes and zero mercy. Guess, weigh, get judged. One try per day.'),
+        h('div', { class: 'x-cta' }, play, h('span', { class: 'mono x-cd' }, 'NEW PUZZLE IN ', cd)),
+      ),
+    ),
+  );
+  (hero.querySelector('.s-aqua') as HTMLElement).append(String(n + 1).padStart(3, '0'));
+
+  // index van spellen: grote typografische rijen
+  const row = (num: string, title: string, status: string, desc: string, live: boolean) => {
+    const el = h(
+      live ? 'button' : 'div',
+      { class: `x-game${live ? ' live' : ''}`, type: live ? 'button' : undefined },
+      h('span', { class: 'mono x-num' }, num),
+      h('span', { class: 'x-name' }, title),
+      h('span', { class: 'x-desc' }, desc),
+      h('span', { class: `mono x-status${live ? ' on' : ''}` }, status),
+      h('span', { class: 'x-arrow', 'aria-hidden': 'true' }, live ? '→' : '—'),
+    );
+    if (live) el.addEventListener('click', opts.onWeegschaal);
+    return el;
+  };
   const games = h(
     'section',
-    { class: 'p-games', 'aria-label': 'Games' },
-    wCard,
-    soon('GAME 02', 'schaduw', 'Guess the thing from its shadow alone. Coming soon.', shadowArt, 'g-shadow'),
-    soon('GAME 03', '???', 'Something with sound. Or tempo. Noodle won’t say.', labArt, 'g-lab'),
+    { class: 'x-games', 'aria-label': 'Games' },
+    h('header', { class: 'x-games-head mono' }, h('span', null, 'INDEX'), h('span', null, '01 — 03'), barcode('DDL-IDX')),
+    row('01', 'Weegschaal', '● LIVE', 'Guess the weight. Load the scale. Get roasted.', true),
+    row('02', 'Schaduw', 'IN DEVELOPMENT', 'Name the thing from its shadow alone.', false),
+    row('03', 'Untitled', 'CLASSIFIED', 'Sound. Or tempo. Not telling.', false),
   );
 
   const strip = h(
     'section',
     { class: 'p-strip' },
     h('div', { class: 'p-stat' }, h('b', null, String(plays)), h('span', { class: 'mono' }, 'GAMES PLAYED')),
-    h('div', { class: 'p-stat' }, h('b', null, '1'), h('span', { class: 'mono' }, 'GAMES LIVE')),
-    h('div', { class: 'p-stat' }, h('b', { class: 'accent' }, '∞'), h('span', { class: 'mono' }, 'ROASTS LEFT')),
+    h('div', { class: 'p-stat' }, h('b', null, '66'), h('span', { class: 'mono' }, 'OBJECTS ON FILE')),
+    h('div', { class: 'p-stat' }, h('b', { class: 'accent' }, '14'), h('span', { class: 'mono' }, 'CALIBRATED WEIGHTS')),
     h('div', { class: 'p-stat' }, h('b', { class: 'lime' }, '0'), h('span', { class: 'mono' }, 'ADS. EVER.')),
   );
 
   const screen = h(
     'main',
     { class: 'screen portal' },
-    h('div', { class: 'home-top' }, brand, h('div', { class: 'top-right' }, h('span', { class: 'pill mono' }, 'v0.4'), soundButton())),
-    ticker(['NEW: WEEGSCHAAL IS LIVE', 'DAILY GAMES', 'NO ACCOUNT NEEDED', 'MADE IN A LAB BY A PILL', 'SCHADUW IN THE LAB'], 'p-ticker'),
+    h('div', { class: 'home-top' }, brand, h('div', { class: 'top-right' }, h('span', { class: 'pill mono' }, 'v0.5'), soundButton())),
     hero,
+    ticker(['WEEGSCHAAL IS LIVE', 'ONE TRY PER DAY', 'NO ACCOUNT', 'SCHADUW IN DEVELOPMENT', 'BUILT IN BRASS & CHROME'], 'p-ticker'),
     games,
     strip,
-    ticker(['DOODALOO', 'WEEGSCHAAL', 'SCHADUW', 'GAME 03', 'NOODLE SAYS HI'], 'p-ticker alt'),
-    h('footer', { class: 'p-foot mono' }, h('span', null, '© doodaloo'), barcode('DDL-2026'), h('span', null, 'made with brass, chrome & spite')),
+    ticker(['DOODALOO', 'WEEGSCHAAL', 'SCHADUW', 'UNTITLED 03'], 'p-ticker alt'),
+    h('footer', { class: 'p-foot mono' }, h('span', null, '© doodaloo 2026'), barcode('DDL-2026'), h('span', null, 'made with brass, chrome & spite')),
   );
   root.replaceChildren(screen);
 
@@ -122,9 +105,21 @@ export function portalScreen(root: HTMLElement, opts: PortalOpts): () => void {
     if (dead) return sc.destroy();
     scale = sc;
     canvas.classList.add('ready');
-    sc.setObject({ emoji: '⚡', title: 'Pikachu', sub: 'Pokémon' }, true);
-    timers.push(window.setTimeout(() => sc.addWeight(4), 1000));
-    timers.push(window.setTimeout(() => sc.addWeight(3), 1400));
+    sc.setObject({ emoji: '', image: `${import.meta.env.BASE_URL}objects/olifant.webp` }, true);
+    timers.push(window.setTimeout(() => sc.addWeight(12), 1100));
+    timers.push(window.setTimeout(() => sc.addWeight(10), 1500));
+    // elke paar seconden "weegt" de hero opnieuw: altijd beweging
+    const loop = (k: number) =>
+      timers.push(
+        window.setTimeout(() => {
+          sc.unlock(k % 2 ? 9 : -6);
+          sc.setMood?.(k % 2 ? 'happy' : 'angry');
+          timers.push(window.setTimeout(() => sc.reset(), 3600));
+          timers.push(window.setTimeout(() => (sc.addWeight(12), sc.addWeight(10 - (k % 2) * 2)), 4300));
+          loop(k + 1);
+        }, k === 0 ? 3200 : 6500),
+      );
+    loop(0);
   });
   return () => {
     dead = true;

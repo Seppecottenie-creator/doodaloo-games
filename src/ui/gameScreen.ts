@@ -49,6 +49,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   const thumbEl = h('div', { class: 'obj-thumb', 'aria-hidden': 'true' });
   const card = h('section', { class: 'obj-card', 'aria-live': 'polite' }, thumbEl, h('div', { class: 'obj-text' }, h('div', { class: 'tags' }, tagEl, catEl), nameEl, descEl));
 
+  const screenHost = h('main', { class: 'screen game' });
   const canvas = h('canvas', { class: 'scale-canvas', role: 'img', 'aria-label': t.game.locked });
   const hint = h('div', { class: 'stage-hint' }, t.game.emptyHint);
   const intro = h('div', { class: 'round-intro', 'aria-hidden': 'true' });
@@ -88,7 +89,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     logList.prepend(h('li', { class: cls }, h('span', { class: 'log-t' }, new Date().toTimeString().slice(0, 8)), ' ', text));
     while (logList.children.length > 7) logList.lastElementChild!.remove();
   };
-  const bubble = new Bubble(stage);
+  const bubble = new Bubble(screenHost);
 
   const totalEl = h('output', { class: 'total' }, '0 g');
   const deltas = h('div', { class: 'deltas', 'aria-hidden': 'true' });
@@ -122,7 +123,8 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   const sheet = h('div', { class: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': 'sheet-score' });
   const bottom = h('div', { class: 'bottom' }, tray, actions, sheet);
 
-  const screen = h('main', { class: 'screen game' }, top, tickHost, card, stage, readout, bottom, extra);
+  const screen = screenHost;
+  screen.append(top, tickHost, card, stage, readout, bottom, extra);
   root.replaceChildren(screen);
 
   // ---------- balans ----------
@@ -222,7 +224,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
     const dots = '●'.repeat(o.difficulty) + '○'.repeat(5 - o.difficulty);
     const src = o.source ? new URL(o.source).hostname.replace('www.', '') : '—';
     tickHost.replaceChildren(
-      ticker([`ROUND ${s.round + 1}/${s.objects.length}`, `${(o.category ?? 'object').toUpperCase()}`, `DIFFICULTY ${dots}`, o.fictional ? `FICTIONAL · ${(o.franchise ?? '').toUpperCase()}` : 'REAL THING', 'PAN A LOCKED', 'NOODLE IS WATCHING', `SCORE ${s.total}`]),
+      ticker([`ROUND ${s.round + 1}/${s.objects.length}`, `${(o.category ?? 'object').toUpperCase()}`, `DIFFICULTY ${dots}`, o.fictional ? `FICTIONAL · ${(o.franchise ?? '').toUpperCase()}` : 'REAL THING', 'PAN A SEALED', 'NO PEEKING', `SCORE ${s.total}`, 'CALIBRATED ±0.00 G']),
     );
     const row = (k: string, v: string | Node) => [h('dt', { class: 'mono' }, k), h('dd', null, v)];
     spec.replaceChildren(
@@ -460,7 +462,7 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
       scale.setMood?.(moodFor(result.score));
       const line = roastLine(result);
       say(line, 60000);
-      log(`NOODLE: “${line}”`, 'roast');
+      log(`VERDICT: “${line}”`, 'roast');
     });
     later(1500, () => showReveal(result));
   });
@@ -563,6 +565,14 @@ export function gameScreen(root: HTMLElement, opts: GameScreenOpts): () => void 
   // tot de balans er is: lade uit
   trayBtns.forEach((b) => (b.disabled = true));
   weighBtn.disabled = true;
+  // op pc vult de balans het hele scherm; schuif de scène naar links, weg van de panelen
+  const updateShift = () => {
+    const wide = window.innerWidth >= 900;
+    canvas.style.setProperty('--scene-shift', wide ? `${Math.max(0, window.innerWidth - card.getBoundingClientRect().left + 16)}px` : '0px');
+  };
+  updateShift();
+  window.addEventListener('resize', updateShift);
+  cleanups.push(() => window.removeEventListener('resize', updateShift));
   void createScale(canvas, {
     onLand: (kind, idx, strength) => {
       if (kind === 'object') {

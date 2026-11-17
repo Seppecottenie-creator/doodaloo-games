@@ -81,7 +81,7 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   tickCd();
   const iv = window.setInterval(tickCd, 1000);
 
-  const heroCanvas = h('canvas', { class: 'hero-canvas', role: 'img', 'aria-label': 'Balance scale with Noodle' });
+  const heroCanvas = h('canvas', { class: 'hero-canvas', role: 'img', 'aria-label': 'Live chrome balance scale' });
   const hero = h('div', { class: 'hero' }, heroCanvas);
   const bubble = new Bubble(hero);
 
