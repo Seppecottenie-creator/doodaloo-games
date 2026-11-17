@@ -81,7 +81,7 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   tickCd();
   const iv = window.setInterval(tickCd, 1000);
 
-  const heroCanvas = h('canvas', { class: 'hero-canvas', role: 'img', 'aria-label': 'Balance scale with Noodle' });
+  const heroCanvas = h('canvas', { class: 'hero-canvas', role: 'img', 'aria-label': 'Live chrome balance scale' });
   const hero = h('div', { class: 'hero' }, heroCanvas);
   const bubble = new Bubble(hero);
 
@@ -92,7 +92,7 @@ export function homeScreen(root: HTMLElement, opts: HomeOpts): () => void {
   const card = h(
     'section',
     { class: 'home-card' },
-    h('div', { class: 'card-head' }, h('h1', null, 'weeg', h('span', { class: 'accent' }, 'schaal')), h('p', { class: 'tagline' }, t.tagline), tabs),
+    h('div', { class: 'card-head' }, h('h1', null, 'weight ', h('span', { class: 'accent' }, 'for it')), h('p', { class: 'tagline' }, t.tagline), tabs),
     hero,
     sticker('DAILY / 24H', 's-lime', 'right:22px;top:26px;--r:0deg'),
     sticker('LOT 001', 's-aqua', 'right:22px;top:58px;--r:0deg'),

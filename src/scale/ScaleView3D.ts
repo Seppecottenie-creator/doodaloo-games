@@ -4,7 +4,6 @@ import {
   BoxGeometry,
   BufferAttribute,
   CanvasTexture,
-  CapsuleGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
@@ -23,6 +22,7 @@ import {
   Plane,
   PlaneGeometry,
   PMREMGenerator,
+  PointLight,
   Raycaster,
   Scene,
   SphereGeometry,
@@ -38,6 +38,10 @@ import {
 } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { BalancePhysics, dropSettled, stepDrop, type Drop } from './physics';
 import { layoutStack, type Placed, type Slot } from './layout';
 import { WEIGHT_SIZE } from './sprites';
@@ -56,9 +60,6 @@ const VISIBLE_PER_KIND = 4;
 const R = 1.42;
 const L = 1.16;
 const PAN_R = 0.62;
-/** Noodle staat rechts naast de sokkel, klein en een beetje vooraan. */
-const NOODLE_POS = new Vector3(1.86, 0, 0.42);
-const NOODLE_H = 0.82;
 const M = ((PAN_R * 2) / 150) * 1.9;
 const GRAVITY = 22;
 
@@ -127,6 +128,25 @@ function shadowBlobTexture() {
 }
 
 /** Emoji als goudkleurig beeldje: één consistente stijl voor alles zonder foto (o.a. verzonnen personages). */
+
+/** Diepe achtergrond: zwart met paarse en aqua gloed. */
+function backTexture() {
+  return canvasTex(512, 288, (c) => {
+    c.fillStyle = '#050507';
+    c.fillRect(0, 0, 512, 288);
+    const g = c.createRadialGradient(256, 150, 10, 256, 150, 260);
+    g.addColorStop(0, 'rgba(110,70,210,0.55)');
+    g.addColorStop(0.45, 'rgba(60,30,120,0.25)');
+    g.addColorStop(1, 'rgba(5,5,7,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 512, 288);
+    const g2 = c.createRadialGradient(90, 40, 4, 90, 40, 160);
+    g2.addColorStop(0, 'rgba(126,232,226,0.18)');
+    g2.addColorStop(1, 'rgba(126,232,226,0)');
+    c.fillStyle = g2;
+    c.fillRect(0, 0, 512, 288);
+  });
+}
 
 /** Lichtgloed achter het voorwerp op de schaal. */
 function haloTexture() {
@@ -452,254 +472,6 @@ interface Puff {
 
 /** Het gezicht van de balans: googly eyes, wenkbrauwen en een mond. */
 
-type EyeMode = 'lid' | 'wide' | 'line' | 'shades';
-
-/** Noodle: de mascotte. Capsule met kleurverloop en chromen ring; reageert op wat er op de balans gebeurt. */
-class Noodle {
-  group = new Group();
-  private inner = new Group();
-  private eyes: Record<EyeMode, Object3D[]> = { lid: [], wide: [], line: [], shades: [] };
-  private mouth: Mesh;
-  private mouthO: Mesh;
-  private mouthSmirk: Mesh;
-  private mouthGrin: Mesh;
-  private shades!: Group;
-  private glow: Mesh;
-  private pupils: Mesh[] = [];
-  mood: Mood = 'idle';
-  sq = 0;
-  sqV = 0;
-  sqT = 0;
-  hop = 0;
-  hopV = 0;
-  tilt = 0;
-  turn = 0;
-  turnT = 0;
-  blinkT = 0;
-  glowT = 0;
-
-  constructor(private mats: Mats) {
-    const r = 0.17;
-    const len = NOODLE_H - 2 * r;
-    const geo = new CapsuleGeometry(r, len, 12, 32);
-    // kleurverloop: aqua boven, violet onder, met een zachte overgang aan de ring
-    const pos = geo.attributes.position;
-    const cols = new Float32Array(pos.count * 3);
-    const top = new Color(0x5fd8cf);
-    const mid = new Color(0x6fb7ee);
-    const bot = new Color(0x6d3fe0);
-    const tmp = new Color();
-    for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i) + NOODLE_H / 2;
-      const t = y / NOODLE_H;
-      if (t > 0.5) tmp.copy(mid).lerp(top, Math.min(1, (t - 0.5) / 0.35));
-      else tmp.copy(bot).lerp(mid, Math.max(0, (t - 0.38) / 0.12));
-      cols.set([tmp.r, tmp.g, tmp.b], i * 3);
-    }
-    geo.setAttribute('color', new BufferAttribute(cols, 3));
-    const skin = new MeshPhysicalMaterial({ vertexColors: true, roughness: 0.5, clearcoat: 0.5, clearcoatRoughness: 0.35, envMapIntensity: 0.6 });
-    const body = new Mesh(geo, skin);
-    body.position.y = NOODLE_H / 2;
-    body.castShadow = true;
-    this.inner.add(body);
-    const ring = new Mesh(new TorusGeometry(r + 0.004, 0.008, 10, 48), mats.chrome);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = NOODLE_H * 0.44;
-    this.inner.add(ring);
-    for (const sx of [-1, 1]) {
-      const arm = new Mesh(new CapsuleGeometry(0.032, 0.05, 6, 12), skin);
-      arm.position.set(sx * (r + 0.015), NOODLE_H * 0.47, 0.02);
-      arm.rotation.z = sx * 0.7;
-      this.inner.add(arm);
-    }
-    const ey = NOODLE_H * 0.72;
-    const ez = Math.sqrt(r * r - 0.06 * 0.06) - 0.004;
-    for (const sx of [-1, 1]) {
-      // half toe: onderste deel van een bol = halfgesloten ooglid
-      const lid = new Mesh(new SphereGeometry(0.03, 18, 12, 0, Math.PI * 2, Math.PI * 0.42, Math.PI * 0.58), mats.black);
-      lid.scale.set(1.15, 0.9, 0.45);
-      lid.position.set(sx * 0.06, ey + 0.008, ez);
-      lid.rotation.z = sx * -0.12;
-      this.inner.add(lid);
-      this.eyes.lid.push(lid);
-      const white = new Mesh(new SphereGeometry(0.03, 18, 12), mats.white);
-      white.scale.z = 0.45;
-      white.position.set(sx * 0.06, ey, ez);
-      const pupil = new Mesh(new SphereGeometry(0.012, 12, 8), mats.black);
-      pupil.position.set(sx * 0.06, ey, ez + 0.013);
-      this.pupils.push(pupil);
-      const wide = new Group();
-      wide.add(white, pupil);
-      this.inner.add(wide);
-      this.eyes.wide.push(wide);
-      const line = new Mesh(new BoxGeometry(0.05, 0.007, 0.01), mats.black);
-      line.position.set(sx * 0.06, ey, ez + 0.004);
-      this.inner.add(line);
-      this.eyes.line.push(line);
-    }
-    // zonnebril
-    const shades = new Group();
-    for (const sx of [-1, 1]) {
-      const lens = new Mesh(new RoundedBoxGeometry(0.075, 0.04, 0.012, 2, 0.008), mats.black);
-      lens.position.set(sx * 0.055, ey, ez + 0.012);
-      shades.add(lens);
-    }
-    const bridge = new Mesh(new BoxGeometry(0.2, 0.008, 0.01), mats.black);
-    bridge.position.set(0, ey + 0.014, ez + 0.01);
-    shades.add(bridge);
-    // een glimlijntje op de glazen
-    for (const sx of [-1, 1]) {
-      const shine = new Mesh(new BoxGeometry(0.03, 0.004, 0.002), mats.white);
-      shine.position.set(sx * 0.055 - 0.012, ey + 0.01, ez + 0.019);
-      shine.rotation.z = 0.5;
-      shades.add(shine);
-    }
-    this.inner.add(shades);
-    this.shades = shades;
-    const mz = Math.sqrt(r * r) - 0.002;
-    const my = NOODLE_H * 0.645;
-    this.mouth = new Mesh(new BoxGeometry(0.022, 0.005, 0.008), mats.black);
-    this.mouth.position.set(0, my, mz);
-    this.mouthO = new Mesh(new TorusGeometry(0.008, 0.0035, 6, 14), mats.black);
-    this.mouthO.position.copy(this.mouth.position);
-    // zelfzekere scheve grijns
-    this.mouthSmirk = new Mesh(new TorusGeometry(0.018, 0.0035, 6, 16, Math.PI * 0.75), mats.black);
-    this.mouthSmirk.position.set(0.012, my + 0.008, mz - 0.002);
-    this.mouthSmirk.rotation.z = Math.PI + 0.55;
-    this.mouthGrin = new Mesh(new TorusGeometry(0.026, 0.0045, 6, 18, Math.PI), mats.black);
-    this.mouthGrin.position.set(0, my + 0.012, mz - 0.003);
-    this.mouthGrin.rotation.z = Math.PI;
-    this.inner.add(this.mouth, this.mouthO, this.mouthSmirk, this.mouthGrin);
-    this.glow = new Mesh(new PlaneGeometry(0.7, 0.7), mats.lime);
-    this.glow.rotation.x = -Math.PI / 2;
-    this.glow.position.y = 0.01;
-    const shadow = new Mesh(new PlaneGeometry(0.55, 0.3), mats.blob);
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.y = 0.004;
-    this.group.add(shadow, this.glow, this.inner);
-    this.group.position.copy(NOODLE_POS);
-    this.group.rotation.y = -0.35;
-    this.setMood('idle');
-  }
-
-  /** Bril: 'down' = op de neus (standaard), 'up' = op het voorhoofd (verbaasd), 'crooked' = scheef (KO). */
-  private face(shades: 'down' | 'up' | 'crooked', eyes: EyeMode | 'none', mouth: 'smirk' | 'grin' | 'o' | 'flat') {
-    for (const [k, list] of Object.entries(this.eyes)) list.forEach((o) => (o.visible = k === eyes));
-    this.shades.visible = true;
-    this.shades.position.set(0, shades === 'up' ? 0.075 : shades === 'crooked' ? -0.012 : 0, shades === 'up' ? -0.012 : 0);
-    this.shades.rotation.set(shades === 'up' ? -0.35 : 0, 0, shades === 'crooked' ? 0.28 : 0);
-    this.mouth.visible = mouth === 'flat';
-    this.mouthO.visible = mouth === 'o';
-    this.mouthSmirk.visible = mouth === 'smirk';
-    this.mouthGrin.visible = mouth === 'grin';
-  }
-
-  private eyeMode(m: EyeMode) {
-    // compat: oude standen vertalen naar bril + mond
-    if (m === 'wide') this.face('up', 'wide', 'o');
-    else if (m === 'line') this.face('crooked', 'none', 'flat');
-    else this.face('down', 'none', 'smirk');
-  }
-
-  setMood(m: Mood) {
-    this.mood = m;
-    this.sqT = 0;
-    this.tilt = 0;
-    this.glowT = 0;
-    switch (m) {
-      case 'surprised':
-        this.eyeMode('wide');
-        this.sqV += 3;
-        break;
-      case 'angry':
-        this.eyeMode('wide');
-        this.sqT = 0.18;
-        break;
-      case 'dead':
-        this.eyeMode('line');
-        this.sqT = -0.36;
-        this.sqV -= 3;
-        break;
-      case 'strain':
-        this.face('down', 'none', 'flat');
-        this.sqT = -0.12;
-        break;
-      case 'happy':
-        this.face('down', 'none', 'grin');
-        this.glowT = 0.9;
-        this.hopV = 2.6;
-        break;
-      case 'cool':
-        this.face('down', 'none', 'grin');
-        this.glowT = 1;
-        this.hopV = 3;
-        this.tilt = 0.1;
-        break;
-      case 'smug':
-        this.eyeMode('lid');
-        this.tilt = 0.12;
-        break;
-      case 'meh':
-        this.eyeMode('lid');
-        this.tilt = -0.08;
-        break;
-      default:
-        this.eyeMode('lid');
-    }
-  }
-
-  jolt(s: number) {
-    this.sqV -= 2.4 * s;
-  }
-
-  hopOnce(v = 2.4) {
-    if (this.hop === 0) this.hopV = v;
-  }
-
-  /** Kijk (lichaam draait mee) naar een punt in de wereld. */
-  look(world: Vector3 | null) {
-    if (!world) this.turnT = -0.35;
-    else this.turnT = Math.max(-0.9, Math.min(0.5, Math.atan2(world.x - NOODLE_POS.x, 2.5) * 1.2 - 0.2));
-  }
-
-  step(dt: number) {
-    this.sqV += (-110 * (this.sq - this.sqT) - 9 * this.sqV) * dt;
-    this.sq += this.sqV * dt;
-    if (this.hop > 0 || this.hopV > 0) {
-      this.hopV -= 14 * dt;
-      this.hop += this.hopV * dt;
-      if (this.hop <= 0) {
-        this.hop = 0;
-        if (this.hopV < -0.8) this.sqV -= Math.min(4, -this.hopV * 1.2);
-        this.hopV = 0;
-      }
-    }
-    this.turn += (this.turnT - this.turn) * Math.min(1, dt * 6);
-    if (this.blinkT > 0) this.blinkT = Math.max(0, this.blinkT - dt);
-    const op = (this.mats.lime.opacity += (this.glowT * (this.hop > 0 ? 1 : 0.55) - this.mats.lime.opacity) * Math.min(1, dt * 5));
-    this.glow.visible = op > 0.01;
-  }
-
-  sync() {
-    const s = Math.max(-0.45, Math.min(0.45, this.sq));
-    this.inner.scale.set(1 - s * 0.5, 1 + s, 1 - s * 0.5);
-    this.inner.position.y = this.hop;
-    this.inner.rotation.z = this.tilt;
-    this.group.rotation.y = this.turn;
-    const blink = this.blinkT > 0 ? Math.abs(Math.sin((this.blinkT / 0.14) * Math.PI)) : 0;
-    for (const e of [...this.eyes.lid, ...this.eyes.wide]) e.scale.y = (e === this.eyes.wide[0] || e === this.eyes.wide[1] ? 1 : 0.9) * (1 - blink * 0.9);
-  }
-
-  settled() {
-    return Math.abs(this.sq - this.sqT) < 1e-3 && Math.abs(this.sqV) < 1e-2 && this.hop === 0 && this.hopV === 0 && Math.abs(this.turn - this.turnT) < 1e-3 && this.blinkT === 0 && Math.abs(this.mats.lime.opacity - this.glowT * 0.55) < 0.01;
-  }
-
-  /** Bovenkant van het hoofd (wereldcoördinaten). */
-  headWorld(): Vector3 {
-    return new Vector3(NOODLE_POS.x, NOODLE_H * (1 + this.sq) + this.hop + 0.04, NOODLE_POS.z);
-  }
-}
-
 export class ScaleView3D implements ScaleLike {
   private renderer: WebGLRenderer;
   private scene = new Scene();
@@ -733,7 +505,22 @@ export class ScaleView3D implements ScaleLike {
   private objectMesh: Mesh | null = null;
   private objectDrop: Drop | null = null;
   private objectToken = 0;
-  private noodle: Noodle;
+  private composer!: EffectComposer;
+  private bloom!: UnrealBloomPass;
+  private flashLight = new PointLight(0xb79cff, 0, 9, 1.6);
+  private flash = 0;
+  private flashColor = new Color(0x7ee8e2);
+  private baseAqua = new Color(0x7ee8e2);
+  private dolly = 0;
+  private dollyV = 0;
+  private dollyT = 0;
+  private par = new Vector2();
+  private parT = new Vector2();
+  private shift = 0;
+  private onPointer = (e: PointerEvent) => {
+    this.parT.set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+    this.wake();
+  };
   private puffs: Puff[] = [];
   private puffMat: SpriteMaterial;
   private blinkTimer = 0;
@@ -769,25 +556,27 @@ export class ScaleView3D implements ScaleLike {
     pmrem.dispose();
     this.scene.environmentIntensity = 1.0;
 
-    this.noodle = new Noodle(this.mats);
     this.puffMat = new SpriteMaterial({ map: puffTexture(), transparent: true, depthWrite: false });
     this.buildScene();
+    // gloed op alles wat licht geeft (neon, lichtranden, chroom-glinsteringen)
+    this.renderer.setClearColor(0x050507, 1);
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.bloom = new UnrealBloomPass(new Vector2(256, 256), 0.5, 0.35, 0.9);
+    this.composer.addPass(this.bloom);
+    this.composer.addPass(new OutputPass());
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(canvas);
     this.resize();
-    const blink = () => {
-      this.blinkTimer = window.setTimeout(blink, 2600 + Math.random() * 3500);
-      if (this.noodle.mood === 'dead' || this.noodle.mood === 'cool') return;
-      this.noodle.blinkT = 0.14;
-      this.wake();
-    };
-    this.blinkTimer = window.setTimeout(blink, 2000);
+    if (matchMedia('(pointer: fine)').matches && !this.reduced) window.addEventListener('pointermove', this.onPointer);
   }
 
   destroy() {
     cancelAnimationFrame(this.raf);
     clearTimeout(this.blinkTimer);
     this.hopTimers.forEach(clearTimeout);
+    window.removeEventListener('pointermove', this.onPointer);
+    this.composer.dispose();
     this.ro.disconnect();
     this.scene.traverse((o) => {
       const m = o as Mesh;
@@ -986,7 +775,12 @@ export class ScaleView3D implements ScaleLike {
     this.lock.position.set(0, PIVOT_Y - 0.32, 0.1);
     scene.add(this.lock);
 
-    scene.add(this.noodle.group);
+    // achtergrond: diepe paarse gloed achter de balans
+    const back = new Mesh(new PlaneGeometry(26, 14), new MeshBasicMaterial({ map: backTexture(), toneMapped: false, depthWrite: false }));
+    back.position.set(0, 2.4, -5);
+    scene.add(back);
+    this.flashLight.position.set(0, 1.9, 1.6);
+    scene.add(this.flashLight);
   }
 
   resize() {
@@ -994,7 +788,10 @@ export class ScaleView3D implements ScaleLike {
     const w = Math.max(200, r.width);
     const h = Math.max(160, r.height);
     this.renderer.setSize(w, h, false);
-    const aspect = w / h;
+    this.composer?.setSize(w, h);
+    this.bloom?.resolution.set(w / 2, h / 2);
+    this.shift = parseFloat(getComputedStyle(this.canvas).getPropertyValue('--scene-shift')) || 0;
+    const aspect = (w - this.shift) / h;
     this.camera.aspect = aspect;
     const vfov = this.camera.fov * DEG;
     const needH = 2.95;
@@ -1006,6 +803,11 @@ export class ScaleView3D implements ScaleLike {
     this.camBase.set(0.08, 1.38 + dist * 0.16, dist);
     this.camera.position.copy(this.camBase);
     this.camera.lookAt(this.lookAtPt);
+    if (this.shift > 0) {
+      // toon de scène gecentreerd in het linkerdeel (w - shift) van het canvas
+      this.camera.aspect = (w + this.shift) / h;
+      this.camera.setViewOffset(w + this.shift, h, this.shift, 0, w, h);
+    } else this.camera.clearViewOffset();
     this.camera.updateProjectionMatrix();
     this.relayout(false);
     this.sync();
@@ -1054,8 +856,6 @@ export class ScaleView3D implements ScaleLike {
       this.objectDrop = drop && !this.reduced ? { dy: 3.4, vy: 0, dx: 0, landed: false, bounces: 0 } : null;
       if (!this.objectDrop) this.cb.onLand?.('object', -1, 0.5);
       this.glance(new Vector3(-R, PIVOT_Y - L + 0.6, 0), 1400);
-      this.noodle.setMood('surprised');
-      this.hopTimers.push(window.setTimeout(() => this.noodle.mood === 'surprised' && this.setMood('idle'), 1200));
       this.sync();
       this.wake();
     };
@@ -1066,6 +866,8 @@ export class ScaleView3D implements ScaleLike {
   }
 
   reset() {
+    this.dollyT = 0;
+    this.flash = 0;
     for (const it of this.items) this.stack.remove(it.obj);
     this.items = [];
     this.slots = [];
@@ -1123,7 +925,6 @@ export class ScaleView3D implements ScaleLike {
     this.slots = [];
     this.tags.clear();
     this.phys.pans[1].vb -= 0.25 * L;
-    this.noodle.hopOnce(1.6);
     this.wake();
   }
 
@@ -1132,7 +933,10 @@ export class ScaleView3D implements ScaleLike {
     // positieve tilt = voorwerp (links) zakt → theta < 0
     this.phys.target = -tiltDeg * DEG;
     this.settledNotified = false;
-    this.setMood('surprised');
+    if (!this.reduced) {
+      this.dollyT = 1;
+      this.hopTimers.push(window.setTimeout(() => ((this.dollyT = 0), this.wake()), 2600));
+    }
     this.wake();
   }
 
@@ -1147,13 +951,13 @@ export class ScaleView3D implements ScaleLike {
     this.wake();
   }
 
+  /** Geen mascotte meer: de stemming wordt een lichtflits in de kleur van de score. */
   setMood(m: Mood) {
-    this.hopTimers.forEach(clearTimeout);
-    this.hopTimers = [];
-    this.noodle.setMood(m);
-    if (m === 'happy' || m === 'cool') {
-      for (let k = 1; k <= 3; k++) this.hopTimers.push(window.setTimeout(() => (this.noodle.hopOnce(m === 'cool' ? 3 : 2.4), this.wake()), k * 650));
-    }
+    const col = { cool: 0xd7ff4a, happy: 0xd7ff4a, smug: 0x7ee8e2, meh: 0xb79cff, angry: 0xff6a3d, dead: 0xff3d3d } as Record<string, number>;
+    if (!(m in col)) return;
+    this.flashColor.setHex(col[m]);
+    this.flash = 1;
+    this.flashLight.color.setHex(col[m]);
     this.wake();
   }
 
@@ -1182,13 +986,6 @@ export class ScaleView3D implements ScaleLike {
 
   poke(clientX: number, clientY: number): 'head' | 'object' | null {
     this.setRay(clientX, clientY);
-    if (this.raycaster.intersectObject(this.noodle.group, true).length) {
-      this.noodle.jolt(1.2);
-      this.noodle.hopOnce(2);
-      this.noodle.blinkT = 0.14;
-      this.wake();
-      return 'head';
-    }
     if (this.objectMesh && this.raycaster.intersectObject(this.objectHolder, true).length && (!this.objectDrop || this.objectDrop.landed)) {
       this.objectDrop = { dy: 0.0001, vy: -4.2, dx: 0, landed: false, bounces: 1 };
       this.phys.impact(0, 0.4, 0.5);
@@ -1204,9 +1001,10 @@ export class ScaleView3D implements ScaleLike {
     return clientX >= r.left + r.width * 0.5 && clientX <= r.right + 20 && clientY >= r.top - 40 && clientY <= r.bottom + 10;
   }
 
-  /** Schermpositie (client-px) boven Noodles hoofd, voor een tekstballon. */
+  /** Schermpositie (client-px) boven de wijzerplaat: daar komt het verdict. */
   headScreenPos(): { x: number; y: number } {
-    const p = this.noodle.headWorld().project(this.camera);
+    this.camera.updateMatrixWorld();
+    const p = new Vector3(0.55, PIVOT_Y + DIAL_R * 0.55, 0).project(this.camera);
     const r = this.canvas.getBoundingClientRect();
     return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
   }
@@ -1295,14 +1093,9 @@ export class ScaleView3D implements ScaleLike {
   private land(idx: number, strength: number) {
     const heft = WEIGHT_SPECS[idx].heft;
     this.phys.impact(1, 0.35 + heft * 0.65, strength);
-    this.noodle.jolt(0.2 + heft * strength);
     if (!this.reduced && heft > 0.45) {
       this.kickV -= heft * strength * 1.4;
       this.puff(1, heft * strength);
-    }
-    if (heft > 0.6 && this.phys.locked && (this.noodle.mood === 'idle' || this.noodle.mood === 'strain')) {
-      this.noodle.setMood('strain');
-      this.hopTimers.push(window.setTimeout(() => this.noodle.mood === 'strain' && this.phys.locked && this.setMood('idle'), 1100));
     }
     this.cb.onLand?.('weight', idx, strength);
   }
@@ -1353,7 +1146,6 @@ export class ScaleView3D implements ScaleLike {
       const s = stepDrop(this.objectDrop, dt, GRAVITY, 7);
       if (s !== null) {
         this.phys.impact(0, 0.8, s);
-        this.noodle.jolt(0.5 * s);
         if (s > 0.5 && !this.reduced) this.puff(0, s * 0.6);
         this.cb.onLand?.('object', -1, s);
       }
@@ -1362,8 +1154,11 @@ export class ScaleView3D implements ScaleLike {
       const s = stepDrop(it.drop, dt, GRAVITY, 5);
       if (s !== null) this.land(it.idx, Math.max(0.15, s));
     }
-    this.noodle.look(this.lookTarget && performance.now() < this.lookUntil ? this.lookTarget : null);
-    this.noodle.step(dt);
+    // camera: muis-parallax en dramatische dolly bij het wegen
+    this.par.lerp(this.parT, Math.min(1, dt * 4));
+    this.dollyV += (-60 * (this.dolly - this.dollyT) - 11 * this.dollyV) * dt;
+    this.dolly += this.dollyV * dt;
+    if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 0.7);
     if (this.shakeT > 0) this.shakeT = Math.max(0, this.shakeT - dt);
     this.kickV += (-300 * this.kick - 18 * this.kickV) * dt;
     this.kick += this.kickV * dt;
@@ -1394,7 +1189,8 @@ export class ScaleView3D implements ScaleLike {
     if (!this.phys.settled()) return false;
     if (this.objectDrop && !dropSettled(this.objectDrop)) return false;
     for (const it of this.items) if (!dropSettled(it.drop)) return false;
-    if (!this.noodle.settled() || this.puffs.length) return false;
+    if (this.puffs.length || this.flash > 0) return false;
+    if (this.par.distanceTo(this.parT) > 1e-3 || Math.abs(this.dolly - this.dollyT) > 1e-3 || Math.abs(this.dollyV) > 1e-3) return false;
     if (this.lookTarget && performance.now() < this.lookUntil + 400) return false;
     return this.shakeT === 0 && Math.abs(this.kick) < 1e-3 && Math.abs(this.highlight - this.highlightTarget) < 0.01;
   }
@@ -1431,9 +1227,13 @@ export class ScaleView3D implements ScaleLike {
       const squash = d && !d.landed && d.dy < 0.03 && d.vy > 1 ? 0.88 : 1;
       this.objectMesh.scale.set(1 / squash, squash, 1);
     }
-    this.noodle.sync();
-    this.mats.glassRight.emissiveIntensity = this.highlight * 0.5;
-    this.camera.position.copy(this.camBase);
+    // lichtflits: lichtranden en een puntlicht in de scorekleur
+    this.mats.aqua.color.copy(this.baseAqua).lerp(this.flashColor, this.flash);
+    this.flashLight.intensity = this.flash * 26;
+    this.bloom.strength = 0.5 + this.flash * 0.7;    this.mats.glassRight.emissiveIntensity = this.highlight * 0.5;
+    this.camera.position.copy(this.camBase).lerp(this.lookAtPt, this.dolly * 0.22);
+    this.camera.position.x += this.par.x * 0.35;
+    this.camera.position.y += -this.par.y * 0.18 - this.dolly * 0.25;
     this.camera.position.y += this.kick * 0.15;
     this.camera.position.z += this.kick * 0.25;
     if (this.shakeT > 0) this.camera.position.x += Math.sin(this.shakeT * 70) * 0.08 * (this.shakeT / 0.45);
@@ -1441,7 +1241,7 @@ export class ScaleView3D implements ScaleLike {
   }
 
   private render() {
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   }
 }
 
@@ -1482,38 +1282,3 @@ export function renderWeightIcons(w = 184, h = 136): string[] {
   return out;
 }
 
-/** Portret van Noodle (met bril) als PNG-data-URL, voor het portaal en andere schermen. */
-export function renderNoodlePortrait(w = 420, h = 560, mood: Mood = 'idle'): string {
-  const canvas = document.createElement('canvas');
-  const r = new WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
-  r.setSize(w, h, false);
-  r.outputColorSpace = SRGBColorSpace;
-  r.toneMapping = ACESFilmicToneMapping;
-  r.toneMappingExposure = 1.1;
-  const scene = new Scene();
-  const pm = new PMREMGenerator(r);
-  scene.environment = pm.fromScene(new RoomEnvironment(), 0.03).texture;
-  pm.dispose();
-  scene.add(new HemisphereLight(0xe8e0ff, 0x120c22, 0.6));
-  const key = new DirectionalLight(0xffffff, 2.4);
-  key.position.set(-2, 4, 4);
-  const rimL = new DirectionalLight(0xb79cff, 2.4);
-  rimL.position.set(-4, 2, -3);
-  const rimR = new DirectionalLight(0x7ee8e2, 2);
-  rimR.position.set(4, 2, -2);
-  scene.add(key, rimL, rimR);
-  const n = new Noodle(new Mats());
-  n.setMood(mood);
-  n.group.position.set(0, 0, 0);
-  n.group.rotation.y = -0.3;
-  n.sync();
-  scene.add(n.group);
-  const cam = new PerspectiveCamera(24, w / h, 0.01, 20);
-  cam.position.set(0, NOODLE_H * 0.62, 2.6);
-  cam.lookAt(0, NOODLE_H * 0.47, 0);
-  r.render(scene, cam);
-  const url = canvas.toDataURL('image/png');
-  r.dispose();
-  r.forceContextLoss();
-  return url;
-}

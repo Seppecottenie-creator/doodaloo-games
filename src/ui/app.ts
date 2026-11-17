@@ -12,6 +12,7 @@ import { homeScreen, type PracticeKind } from './homeScreen';
 import { creditsScreen } from './creditsScreen';
 import { preloadScale, weightIcons } from '../scale';
 import { portalScreen } from './portalScreen';
+import { shadyScreen } from './shadyScreen';
 import { mountBackdrop } from './decor';
 
 // Mijlpaal 1: de pool zit in de bundle. Vanaf mijlpaal 3 komt het dagelijkse spel van de server.
@@ -41,8 +42,9 @@ export function startApp(root: HTMLElement) {
       }),
     );
 
-  // ---------- routing: #weegschaal = het spel, anders het doodaloo-portaal ----------
-  const portal = () => show(() => portalScreen(root, { onWeegschaal: () => go('weegschaal') }));
+  // ---------- routing: #weegschaal = Weight For It, #shady = Shady, anders het doodaloo-portaal ----------
+  const portal = () => show(() => portalScreen(root, { onWeigh: () => go('weegschaal'), onShady: () => go('shady') }));
+  const shady = () => show(() => shadyScreen(root, { onPortal: () => go('') }));
   function go(hash: string) {
     if (location.hash.replace('#', '') === hash) return route();
     if (hash) location.hash = hash;
@@ -52,6 +54,7 @@ export function startApp(root: HTMLElement) {
   function route() {
     const h = location.hash.replace('#', '');
     if (h === 'weegschaal') home();
+    else if (h === 'shady') shady();
     else portal();
   }
   window.addEventListener('hashchange', route);

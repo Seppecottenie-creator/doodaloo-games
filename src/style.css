@@ -2417,6 +2417,858 @@ body::after {
   text-shadow: 0 0 60px rgba(183, 156, 255, 0.25);
 }
 
+/* ---------- impact: immersieve 3D, glas, reuzetypografie ---------- */
+.bubble {
+  background: rgba(10, 9, 18, 0.78);
+  color: var(--ink);
+  border: 1px solid rgba(183, 156, 255, 0.45);
+  border-left: 3px solid var(--lilac);
+  border-radius: 8px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.9), 0 0 40px -10px rgba(183, 156, 255, 0.45);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bubble::after {
+  display: none;
+}
+.bubble-label {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  color: var(--lilac);
+}
+.p-say {
+  display: none;
+}
+
+/* verdict boven alles; onthulling ondoorzichtig genoeg */
+.game {
+  position: relative;
+}
+.game > .bubble {
+  position: absolute !important;
+  z-index: 8;
+  height: auto;
+}
+.sheet {
+  background: rgba(11, 10, 18, 0.94) !important;
+}
+
+/* gsm: stage tot aan de randen, titel over de 3D-scène */
+@media (max-width: 899px) {
+  .game {
+    grid-template-areas: 'hud' 'tick' 'stage' 'readout' 'bottom';
+    grid-template-rows: auto auto minmax(250px, 1fr) auto auto;
+  }
+  .hud {
+    grid-area: hud;
+  }
+  .game-ticker {
+    grid-area: tick;
+  }
+  .stage {
+    grid-area: stage;
+    margin: 0 -14px;
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
+  }
+  .obj-card {
+    grid-area: stage;
+    align-self: start;
+    z-index: 3;
+    pointer-events: none;
+    padding: 12px 2px 0;
+  }
+  .obj-desc {
+    display: none;
+  }
+  .obj-name {
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.9);
+  }
+  .obj-name.long {
+    font-size: clamp(1.6rem, 7.5vw, 2rem);
+  }
+  .readout {
+    grid-area: readout;
+  }
+  .bottom {
+    grid-area: bottom;
+  }
+  .stage-label {
+    top: auto;
+    bottom: 10px;
+  }
+  .credit {
+    top: auto;
+    bottom: 26px;
+  }
+  .peek {
+    top: auto;
+    bottom: 40px;
+  }
+  .stage-badge,
+  .ruler {
+    display: none;
+  }
+  .stage-hint {
+    bottom: 56px;
+  }
+}
+
+/* pc: de balans is het hele scherm, panelen zweven erboven */
+@media (min-width: 900px) {
+  .game {
+    position: relative;
+  }
+  .game > * {
+    position: relative;
+    z-index: 2;
+  }
+  .game > .stage {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #050507;
+  }
+  .stage .corner.tl,
+  .stage .corner.bl {
+    left: 28px;
+  }
+  .stage .corner.tl,
+  .stage .corner.tr {
+    top: 110px;
+  }
+  .stage-label {
+    top: 120px;
+  }
+  .stage-label.left {
+    left: 46px;
+  }
+  .stage-label.right {
+    right: auto;
+    left: 46px;
+    top: 140px;
+  }
+  .credit {
+    left: 46px;
+    top: 160px;
+  }
+  .peek {
+    right: auto;
+    left: 46px;
+    top: 186px;
+  }
+  .stage-badge {
+    left: 40px;
+    bottom: 40px;
+    width: 84px;
+    height: 84px;
+  }
+  .ruler {
+    left: 14px;
+    top: 120px;
+    bottom: 60px;
+  }
+  .obj-card,
+  .panel,
+  .sheet {
+    background: rgba(11, 10, 18, 0.62) !important;
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: inset 0 0 0 1px rgba(183, 156, 255, 0.22), 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+  }
+  .readout,
+  .bottom {
+    background: rgba(11, 10, 18, 0.5);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: inset 0 0 0 1px rgba(183, 156, 255, 0.16);
+  }
+  .w-btn {
+    background: rgba(18, 16, 28, 0.75);
+  }
+  .obj-name,
+  .obj-name.long {
+    font-size: clamp(2.2rem, 3.2vw, 3.4rem);
+  }
+  .total {
+    font-size: clamp(3.4rem, 5vw, 5rem);
+  }
+}
+
+/* ---------- portaal: rustig, alle spellen gelijk ---------- */
+.q-portal {
+  gap: 22px;
+}
+.q-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 2px 6px;
+}
+.q-kicker {
+  font-size: 0.62rem;
+  color: var(--aqua);
+}
+.q-title {
+  margin: 0;
+  font-size: clamp(3rem, 15vw, 9.5rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.85;
+  color: var(--ink);
+}
+.q-title span {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--lilac);
+}
+.q-lede {
+  margin: 0;
+  max-width: 36ch;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+.q-cd {
+  font-size: 0.6rem;
+  color: var(--dim);
+}
+.q-games {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.q-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 0;
+  border-radius: 22px;
+  background: rgba(11, 10, 18, 0.78);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.25s var(--spring), box-shadow 0.25s;
+}
+.q-card:not(.locked):hover,
+.q-card:not(.locked):focus-visible {
+  transform: translateY(-3px);
+  box-shadow: inset 0 0 0 1.5px var(--lilac), 0 20px 50px -24px rgba(183, 156, 255, 0.6);
+}
+.q-card.locked {
+  cursor: default;
+  opacity: 0.6;
+}
+.q-art {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.q-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.q-num {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.6rem;
+  color: var(--dim);
+}
+.q-tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.q-tag.on {
+  color: #151a00;
+  background: var(--lime);
+  box-shadow: none;
+}
+.c-shady .q-tag.on {
+  background: var(--aqua);
+  color: #00201e;
+}
+.q-name {
+  font-size: clamp(1.5rem, 6.4vw, 2.6rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+.q-desc {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+.q-go {
+  margin-top: 4px;
+  font-weight: 800;
+  font-size: 0.86rem;
+  color: var(--lilac);
+}
+.q-weigh {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(183, 156, 255, 0.55), rgba(139, 92, 246, 0.15) 55%, #0b0a12 80%);
+}
+.q-weigh img {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 30%;
+  width: 72%;
+  height: 52%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.6));
+  animation: q-bob 3.2s ease-in-out infinite;
+}
+.q-beam {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 24%;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--aqua), var(--lilac), var(--pink));
+  box-shadow: 0 0 14px rgba(183, 156, 255, 0.8);
+  animation: q-tilt 3.2s ease-in-out infinite;
+}
+.q-q {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8%;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--lime);
+}
+@keyframes q-bob {
+  50% {
+    transform: translateY(4px);
+  }
+}
+@keyframes q-tilt {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+.q-shadow {
+  position: absolute !important;
+  inset: 0;
+  border-radius: 0 !important;
+}
+.q-locked {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(135deg, #0b0a12 0 10px, #120f1d 10px 20px);
+}
+.q-locked span {
+  font-size: 3rem;
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--dim);
+}
+@media (min-width: 900px) {
+  .q-hero {
+    padding: 48px 0 12px;
+  }
+  .q-games {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .q-card {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    padding: 14px 14px 20px;
+  }
+  .q-art {
+    aspect-ratio: 4 / 3;
+  }
+  .q-name {
+    font-size: 2.3rem;
+  }
+}
+
+/* ---------- Shady ---------- */
+.shady {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100dvh;
+}
+.sh-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+}
+.sh-back {
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 800 1rem var(--sans);
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  padding: 6px 0;
+}
+.sh-tag,
+.sh-kicker {
+  font-size: 0.62rem;
+  color: var(--aqua);
+}
+/* intro */
+.sh-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+.sh-intro-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sh-title {
+  margin: 0;
+  font-size: clamp(4rem, 22vw, 10rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.82;
+}
+.sh-lede {
+  margin: 0;
+  color: var(--muted);
+  max-width: 38ch;
+  line-height: 1.45;
+}
+.sh-rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sh-rules li {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.sh-rules b {
+  color: #ffd27a;
+}
+.sh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sh-cta {
+  padding: 1rem 1.4rem;
+}
+.sh-cd,
+.sh-note {
+  font-size: 0.6rem;
+  color: var(--dim);
+}
+.sh-art svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.art-shadow {
+  transform-origin: 250px 240px;
+  animation: art-swing 4s ease-in-out infinite;
+}
+.art-shards {
+  animation: art-float 4s ease-in-out infinite;
+}
+@keyframes art-float {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.art-sun {
+  animation: art-pulse 3s ease-in-out infinite;
+  transform-origin: 70px 60px;
+}
+@keyframes art-swing {
+  0%,
+  100% {
+    transform: skewX(-25deg) scaleX(0.8);
+    opacity: 0.4;
+  }
+  55%,
+  75% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes art-pulse {
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+/* spel */
+.sh-play {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.sh-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.66rem;
+  color: var(--muted);
+}
+.sh-hud-l,
+.sh-hud-r {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sh-total {
+  color: var(--ink);
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+.sh-pips {
+  display: flex;
+  gap: 4px;
+}
+.sh-pip {
+  width: 16px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.sh-pip.now {
+  background: #ffd27a;
+}
+.sh-pip.ok {
+  background: var(--lime);
+}
+.sh-pip.mid {
+  background: var(--aqua);
+}
+.sh-pip.bad {
+  background: var(--flare);
+}
+/* de hemel: koel overdag, warm bij een lage zon */
+.sh-sky {
+  --dusk: 0.3;
+  position: relative;
+  height: min(62vh, 640px);
+  min-height: 340px;
+  border-radius: 26px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 140, 70, calc(var(--dusk) * 0.55)), rgba(226, 92, 241, calc(var(--dusk) * 0.25)) 45%, transparent 75%),
+    radial-gradient(80% 60% at 50% 0%, #2c2a5e, #120f24 70%, #08070d);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.sh-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+.sh-canvas:active {
+  cursor: grabbing;
+}
+.sh-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  font-size: 0.58rem;
+  color: rgba(244, 242, 255, 0.75);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(5, 5, 7, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.5s;
+  animation: sh-nudge 1.6s ease-in-out infinite;
+}
+.sh-hint.gone {
+  opacity: 0;
+}
+@keyframes sh-nudge {
+  50% {
+    transform: translateX(calc(-50% + 8px));
+  }
+}
+.sh-nogl {
+  position: absolute;
+  inset: 40% 16px auto;
+  text-align: center;
+  color: var(--muted);
+}
+.sh-result {
+  position: absolute;
+  left: 16px;
+  top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.9);
+  transition: opacity 0.35s, transform 0.45s var(--spring);
+  pointer-events: none;
+}
+.sh-result.show {
+  opacity: 1;
+  transform: none;
+}
+.sh-result b {
+  font-size: clamp(3rem, 14vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+}
+.sh-result span {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+.sh-result.ok b {
+  color: var(--lime);
+}
+.sh-result.mid b {
+  color: var(--aqua);
+}
+.sh-result.bad b {
+  color: var(--flare);
+}
+.sh-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.sh-heat-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sh-heat-wrap span {
+  font-size: 0.55rem;
+  color: var(--dim);
+}
+.sh-heat {
+  display: flex;
+  gap: 4px;
+}
+.sh-heat i {
+  flex: 1;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--line);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.sh-heat i.on:nth-child(1) {
+  background: #3b6fb0;
+}
+.sh-heat i.on:nth-child(2) {
+  background: #40c8dc;
+}
+.sh-heat i.on:nth-child(3) {
+  background: var(--aqua);
+}
+.sh-heat i.on:nth-child(4) {
+  background: #b7f07a;
+}
+.sh-heat i.on:nth-child(5),
+.sh-heat.hot i.on {
+  background: var(--lime);
+  box-shadow: 0 0 14px rgba(215, 255, 74, 0.8);
+}
+.sh-lock {
+  padding: 1rem 1.5rem;
+  font-size: 1.02rem;
+}
+
+/* voorbeeldkaart: de vorm die je moet maken */
+.sh-example {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 112px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 10px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 40%, #f6f3ff, #cbbcff 60%, #8b72e0);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  color: #1a1430;
+  transition: box-shadow 0.3s, transform 0.3s var(--spring);
+  pointer-events: none;
+}
+.sh-example span {
+  font-size: 0.52rem;
+  opacity: 0.7;
+}
+.sh-example b {
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.sh-ex-art canvas {
+  width: 84px;
+  height: 84px;
+  display: block;
+}
+.sh-example.hot {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px var(--lime), 0 0 30px -2px rgba(215, 255, 74, 0.8);
+}
+.sh-example.done {
+  box-shadow: 0 0 0 3px #fff;
+}
+.sh-bar-emo {
+  font-size: 1.1rem;
+}
+
+/* einde */
+.sh-end {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 10px;
+}
+.sh-big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.sh-big b {
+  font-size: clamp(5rem, 28vw, 11rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.85;
+}
+.sh-big span {
+  font-size: 1.4rem;
+  color: var(--dim);
+  font-weight: 800;
+}
+.sh-verdict {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.sh-squares {
+  font-size: 1.6rem;
+  letter-spacing: 4px;
+}
+.sh-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sh-bars li {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.sh-bars i {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, currentColor var(--w), var(--line) var(--w));
+}
+.sh-bars i.ok {
+  color: var(--lime);
+}
+.sh-bars i.mid {
+  color: var(--aqua);
+}
+.sh-bars i.bad {
+  color: var(--flare);
+}
+.sh-bars b {
+  color: var(--ink);
+  text-align: right;
+}
+.sh-best {
+  font-size: 0.66rem;
+  color: var(--lime);
+}
+
+/* portaalkaart */
+.q-shady {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(80% 70% at 50% 0%, #2c2a5e, #0b0a12 80%);
+}
+.q-shady svg {
+  width: 100%;
+  height: auto;
+}
+@media (min-width: 900px) {
+  .shady {
+    max-width: 1180px;
+  }
+  .sh-intro {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 48px;
+    padding-top: 40px;
+  }
+  .sh-sky {
+    height: min(70vh, 720px);
+  }
+  .sh-bar {
+    grid-template-columns: minmax(0, 420px) auto;
+    justify-content: space-between;
+  }
+  .sh-end {
+    max-width: 680px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

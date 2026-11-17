@@ -8,7 +8,7 @@ export class Bubble {
 
   constructor(private host: HTMLElement) {
     this.text = h('span', { class: 'bubble-text' });
-    this.el = h('div', { class: 'bubble', role: 'status', 'aria-live': 'polite' }, this.text);
+    this.el = h('div', { class: 'bubble', role: 'status', 'aria-live': 'polite' }, h('span', { class: 'bubble-label' }, 'VERDICT'), this.text);
     host.append(this.el);
   }
 

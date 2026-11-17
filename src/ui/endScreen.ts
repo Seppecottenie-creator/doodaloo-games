@@ -82,7 +82,7 @@ export function endScreen(root: HTMLElement, o: EndOpts): () => void {
   const screen = h(
     'main',
     { class: 'screen end' },
-    h('div', { class: 'home-top' }, h('span', { class: 'end-kicker' }, o.number ? `Weegschaal #${o.number}` : t.end.titlePractice), soundButton()),
+    h('div', { class: 'home-top' }, h('span', { class: 'end-kicker' }, o.number ? `Weight For It #${o.number}` : t.end.titlePractice), soundButton()),
     h('div', { class: 'end-hero' }, ring(total / max), h('div', { class: 'end-score-wrap' }, h('span', { class: 'end-title' }, t.end.title), big, h('span', { class: 'of' }, `/ ${max}`))),
     h('p', { class: 'verdict' }, v),
     h('div', { class: 'squares', 'aria-hidden': 'true' }, o.results.map((r) => scoreSquare(r.score)).join('')),

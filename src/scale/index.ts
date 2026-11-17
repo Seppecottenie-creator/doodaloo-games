@@ -50,19 +50,3 @@ export async function createScale(canvas: HTMLCanvasElement, cb: ScaleCallbacks)
   return new ScaleView(canvas, cb);
 }
 
-let portrait: Promise<string | null> | null = null;
-/** Noodle met zonnebril als afbeelding (null zonder WebGL). */
-export function noodlePortrait(): Promise<string | null> {
-  portrait ??= preloadScale().then((C) =>
-    C
-      ? import('./ScaleView3D').then((m) => {
-          try {
-            return m.renderNoodlePortrait();
-          } catch {
-            return null;
-          }
-        })
-      : null,
-  );
-  return portrait;
-}
