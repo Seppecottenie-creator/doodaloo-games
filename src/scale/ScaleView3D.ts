@@ -128,6 +128,18 @@ function shadowBlobTexture() {
 
 /** Emoji als goudkleurig beeldje: één consistente stijl voor alles zonder foto (o.a. verzonnen personages). */
 
+/** Lichtgloed achter het voorwerp op de schaal. */
+function haloTexture() {
+  return canvasTex(256, 256, (c) => {
+    const g = c.createRadialGradient(128, 128, 6, 128, 128, 128);
+    g.addColorStop(0, 'rgba(220,210,255,0.42)');
+    g.addColorStop(0.45, 'rgba(183,156,255,0.16)');
+    g.addColorStop(1, 'rgba(183,156,255,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 256, 256);
+  });
+}
+
 /** Paarse vloergloed zoals in de render. */
 function floorTexture() {
   return canvasTex(256, 256, (c) => {
@@ -216,18 +228,19 @@ class Mats {
   aqua = new MeshBasicMaterial({ color: 0x7ee8e2, toneMapped: false });
   pink = new MeshBasicMaterial({ color: 0xff5fd8, toneMapped: false });
   tick = new MeshBasicMaterial({ color: 0xd8d2ff, toneMapped: false, transparent: true, opacity: 0.75 });
-  // gewichten: chroom, gunmetal, grafiet
-  brass = new MeshStandardMaterial({ color: 0xd3d7e1, metalness: 1, roughness: 0.16 });
-  iron = new MeshStandardMaterial({ color: 0x2a2c35, metalness: 0.8, roughness: 0.32 });
-  ironDark = new MeshStandardMaterial({ color: 0x15161b, metalness: 0.7, roughness: 0.4 });
-  steel = new MeshStandardMaterial({ color: 0xc6ccd6, metalness: 1, roughness: 0.22 });
-  concrete = new MeshStandardMaterial({ color: 0x55575f, metalness: 0.1, roughness: 0.85 });
-  safe = new MeshStandardMaterial({ color: 0x2a2342, metalness: 0.6, roughness: 0.35 });
+  // gewichten: klassiek messing, gietijzer, beton en een groene brandkast
+  brass = new MeshStandardMaterial({ color: 0xd9ad4a, metalness: 1, roughness: 0.22 });
+  iron = new MeshStandardMaterial({ color: 0x2d2e33, metalness: 0.65, roughness: 0.5 });
+  ironDark = new MeshStandardMaterial({ color: 0x1a1b1f, metalness: 0.6, roughness: 0.55 });
+  steel = new MeshStandardMaterial({ color: 0xb8c0c8, metalness: 1, roughness: 0.3 });
+  concrete = new MeshStandardMaterial({ color: 0xa3a29b, metalness: 0, roughness: 0.95 });
+  safe = new MeshStandardMaterial({ color: 0x2f5a3e, metalness: 0.5, roughness: 0.4 });
   rubber = new MeshStandardMaterial({ color: 0x131317, metalness: 0.1, roughness: 0.7 });
   lockBody = new MeshStandardMaterial({ color: 0xeef0f6, metalness: 1, roughness: 0.1, transparent: true });
   lockShackle = new MeshStandardMaterial({ color: 0x7ee8e2, metalness: 0.6, roughness: 0.2, transparent: true });
   blob = new MeshBasicMaterial({ map: shadowBlobTexture(), transparent: true, depthWrite: false });
   floor = new MeshBasicMaterial({ map: floorTexture(), transparent: true, depthWrite: false });
+  halo = new MeshBasicMaterial({ map: haloTexture(), transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false });
   black = new MeshPhysicalMaterial({ color: 0x050507, roughness: 0.08, metalness: 0, clearcoat: 1 });
   white = new MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
   lime = new MeshBasicMaterial({ color: 0xd7ff4a, transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
@@ -967,10 +980,11 @@ export class ScaleView3D implements ScaleLike {
       if (token !== this.objectToken) return tex.dispose();
       tex.colorSpace = SRGBColorSpace;
       tex.anisotropy = 4;
-      let hh = card ? 0.95 : 1.0;
+      // groot genoeg om duidelijk te zien; brede dingen mogen iets over de rand
+      let hh = card ? 1.05 : 1.25;
       let ww = hh * aspect;
-      if (ww > 1.3) {
-        ww = 1.3;
+      if (ww > 1.7) {
+        ww = 1.7;
         hh = ww / aspect;
       }
       const geo = new PlaneGeometry(ww, hh);
@@ -978,6 +992,11 @@ export class ScaleView3D implements ScaleLike {
       const mesh = new Mesh(geo, new MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.02, toneMapped: false, side: DoubleSide }));
       mesh.castShadow = !card;
       mesh.rotation.x = -Math.atan2(this.camBase.y - PIVOT_Y + L, this.camBase.z) * 0.6;
+      // zachte gloed achter het voorwerp: maakt het los van de donkere achtergrond
+      const halo = new Mesh(new PlaneGeometry(ww * 1.5, hh * 1.4), this.mats.halo);
+      halo.position.set(0, hh * 0.5, -0.08);
+      halo.renderOrder = -1;
+      mesh.add(halo); // draait mee met de foto, blijft er altijd achter
       const blob = new Mesh(new PlaneGeometry(Math.min(ww * 0.9, PAN_R * 1.6), Math.min(ww * 0.5, 0.5)), this.mats.blob);
       blob.rotation.x = -Math.PI / 2;
       blob.position.y = 0.006;
